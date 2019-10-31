@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/mapping_ecosystem_services" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
