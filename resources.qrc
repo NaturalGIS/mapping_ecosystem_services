@@ -1,9 +1,1 @@
-<RCC>
-  <qresource  prefix="/plugins/mapping_ecosystem_services" >
-    <file>img/uevora.jpeg</file>
-    <file>img/alentejo2020.jpeg</file>
-    <file>img/2020.jpeg</file>
-    <file>img/eu.jpeg</file>
-    <file>icon.png</file>
-  </qresource>
-</RCC>
+<RCC/>
