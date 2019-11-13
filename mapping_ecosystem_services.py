@@ -24,13 +24,18 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QPersistentModelIndex
 from qgis.PyQt.QtGui import QIcon, QStandardItemModel, QStandardItem
 from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsFeatureRequest, QgsVectorFileWriter
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .mapping_ecosystem_services_dialog import MappingEcosystemServicesDialog
 import os.path
+import webbrowser
+from osgeo import ogr
+import processing
+from processing.tools import dataobjects
+from datetime import datetime
 
 
 class MappingEcosystemServices:
@@ -196,14 +201,11 @@ class MappingEcosystemServices:
             self.dlg.target.removeRow(row)
 
     def sourceRowsAdded(self, a, b, c):
+        return
         print(self)
         print(a)
         print(b)
         print(c)
-        model = self.dlg.source.model()
-        for row in range(0, model.rowCount()):
-            index = model.index(row, 0)
-            print(index.data())
 
     def loadLandUseFields(self, a):
         selectedLayerIndex = self.dlg.landUseLayerQbox.currentIndex()
@@ -232,6 +234,22 @@ class MappingEcosystemServices:
                 self.dlg.origin.clear()
                 self.dlg.origin.addItems(fieldData)
 
+    def getSelectedLandUseLayer(self):
+        selectedLandUse = self.dlg.landUseLayerQbox.currentText()
+        if selectedLandUse != '':
+            return QgsProject.instance().mapLayersByName(selectedLandUse)[0]
+        else:
+            return ''
+
+    def getSelectedStudyAreaLayer(self):
+        selectedStudyArea = self.dlg.studyAreaLayerQbox.currentText()
+        return QgsProject.instance().mapLayersByName(selectedStudyArea)[0]
+
+    def helpAction(self):
+        '''Display a help page'''
+        webbrowser.open(
+            'https://github.com/NaturalGIS/mapping_ecosystem_services', new=2)
+
     def run(self):
         """Run method that performs all the real work"""
 
@@ -243,7 +261,7 @@ class MappingEcosystemServices:
 
         # show the dialog
         self.dlg.show()
-
+        self.dlg.helpButton.pressed.connect(self.helpAction)
         ############## Load layers ######################
         # Fetch Study area
         layers = QgsProject.instance().layerTreeRoot().children()
@@ -260,6 +278,9 @@ class MappingEcosystemServices:
         # Fetch Land Use
         self.dlg.landUseLayerQbox.clear()
         self.dlg.landUseFieldQbox.clear()
+        self.dlg.origin.clear()
+        self.dlg.target.setRowCount(0)
+        self.dlg.source.setRowCount(0)
         # Populate the comboBox with names of all vector layers
         self.dlg.landUseLayerQbox.addItem('')
         self.dlg.landUseLayerQbox.addItems(
@@ -278,14 +299,59 @@ class MappingEcosystemServices:
         self.dlg.source.setColumnCount(2)
         self.dlg.source.setHorizontalHeaderLabels(['Land use', 'Value'])
 
+        # self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
         self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
 
         #####################################
-
+        # current timestamp usefull for output files
+        self.timestamp = str(datetime.timestamp(datetime.now()))
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+            print('OK pressed')
+            studyAreaLayer = self.getSelectedStudyAreaLayer()
+
+            OgrStudyAreaLayer = ogr.Open(studyAreaLayer.source())
+
+            landUseLayer = self.getSelectedLandUseLayer()
+            # print(landUseLayer.source())
+            context = dataobjects.createContext()
+            context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
+            outputLayer = 'Intersection'
+            outputFile = "ogr:dbname='/Users/lcalisto/Documents/myQGISPlugins/mapping-ecosystem-services/output_result_" + \
+                self.timestamp+".gpkg' table="+outputLayer+" (geom) sql="
+
+            processing.run("qgis:extractbylocation", {'INPUT': landUseLayer,
+                                                      'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
+
+            opts = QgsVectorFileWriter.SaveVectorOptions()
+
+            opts.driverName = "GPKG"
+            outputFile = "/Users/lcalisto/Documents/myQGISPlugins/mapping-ecosystem-services/output_result_" + \
+                self.timestamp+".gpkg"
+            opts.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+            opts.layerName = 'study_area'
+            error = QgsVectorFileWriter.writeAsVectorFormat(layer=studyAreaLayer,
+                                                            fileName=outputFile,
+                                                            options=opts)
+
+            srcdataSource = ogr.Open(
+                '/Users/lcalisto/Documents/myQGISPlugins/mapping-ecosystem-services/output_result_' + self.timestamp + '.gpkg')
+            print(srcdataSource)
+            layername = srcdataSource.GetLayer('Intersection').GetName()
+            print(layername)
+            sql = '''SELECT * FROM Intersection LIMIT 10 '''.format(
+                layername=srcdataSource.GetLayer('Intersection'))
+            # sql = '''SELECT *
+            # FROM {layername}
+            # ORDER BY GEOMETRY <-> ST_GeomFromText('POINT(1.272133332997328 -133640.3440999996)')
+            # LIMIT 10 '''.format(
+            #     layername=layername)
+
+            ResultSet = srcdataSource.ExecuteSQL(sql, dialect='SQLite')
+            print(ResultSet)
+            for feature in ResultSet:
+                print(feature)
+                print(feature.GetField("megaclasse"))
+            print('Finished')

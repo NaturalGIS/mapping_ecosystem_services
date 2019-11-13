@@ -22,6 +22,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="autoFillBackground">
+      <bool>false</bool>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -43,7 +46,7 @@
           <double>9999999999.000000000000000</double>
          </property>
          <property name="value">
-          <double>100.000000000000000</double>
+          <double>500.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -258,24 +261,36 @@
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <widget class="QTextBrowser" name="textBrowser">
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: #f9f9f9;</string>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
          <property name="html">
           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.AppleSystemUIFont'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:16pt; font-weight:600; color:#000000; background-color:#ffffff;&quot;&gt;New tools for monitoring ecosystems services in traditional Alentejo production systems under intensification&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:16pt; font-weight:600; color:#000000;&quot;&gt;New tools for monitoring ecosystems services in traditional Alentejo production systems under intensification&lt;/span&gt;&lt;/p&gt;
 &lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:14pt; color:#000000; background-color:#ffffff;&quot;&gt;Reference: ALT20-03-0145-FEDER-000008&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:14pt; color:#000000;&quot;&gt;Reference: ALT20-03-0145-FEDER-000008&lt;/span&gt;&lt;/p&gt;
 &lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:14pt; color:#000000; background-color:#ffffff;&quot;&gt;Co-funded by:&lt;/span&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/2020.jpeg&quot; width=&quot;150&quot; /&gt; &lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/alentejo2020.jpeg&quot; width=&quot;150&quot; /&gt; &lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/eu.jpeg&quot; width=&quot;150&quot; /&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:14pt; color:#000000;&quot;&gt;Co-funded by:&lt;/span&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/2020.jpeg&quot; width=&quot;150&quot; /&gt; &lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/alentejo2020.jpeg&quot; width=&quot;150&quot; /&gt; &lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/eu.jpeg&quot; width=&quot;150&quot; /&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
 &lt;p align=&quot;center&quot; style=&quot;-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:14pt; color:#000000; background-color:#ffffff;&quot;&gt;Plugin conception by:&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; font-size:14pt; color:#000000;&quot;&gt;Plugin concept by:&lt;/span&gt;&lt;/p&gt;
 &lt;p align=&quot;center&quot; style=&quot;-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/uevora.jpeg&quot; width=&quot;200&quot; /&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://www.uevora.pt&quot;&gt;&lt;img src=&quot;:/plugins/mapping_ecosystem_services/img/uevora.jpeg&quot; width=&quot;200&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; color:#000000; background-color:#ffffff;&quot;&gt;Plugin developed by &lt;/span&gt;&lt;a href=&quot;https://github.com/lcalisto&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Luís Calisto&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; color:#000000; background-color:#ffffff;&quot;&gt; for &lt;/span&gt;&lt;a href=&quot;https://www.naturalgis.pt&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;NaturalGIS&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; color:#000000;&quot;&gt;Plugin developed by &lt;/span&gt;&lt;a href=&quot;https://github.com/lcalisto&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Luís Calisto&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'Open Sans,Lucida Grande,Lucida Sans Unicode,Arial,Helvetica,Verdana,sans-serif'; color:#000000;&quot;&gt; for &lt;/span&gt;&lt;a href=&quot;https://www.naturalgis.pt&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;NaturalGIS&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -286,7 +301,7 @@ p, li { white-space: pre-wrap; }
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="helpButton">
        <property name="text">
         <string>Help</string>
        </property>
