@@ -23,8 +23,9 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QPersistentModelIndex
 from qgis.PyQt.QtGui import QIcon, QStandardItemModel, QStandardItem
-from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton
-from qgis.core import QgsProject, QgsFeatureRequest, QgsVectorFileWriter
+from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox
+from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsVectorFileWriter, QgsMessageLog
+
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -250,6 +251,25 @@ class MappingEcosystemServices:
         webbrowser.open(
             'https://github.com/NaturalGIS/mapping_ecosystem_services', new=2)
 
+    def log(self, message, level=Qgis.Info):
+        QgsMessageLog.logMessage(
+            message, 'Mapping Ecosystem Services Plugin', level=level)
+
+    def selectFolder(self):
+        foldername = QFileDialog.getExistingDirectory(
+            self.dlg, "Select folder ", "",)
+        self.dlg.searchFolder.setText(foldername)
+
+    def saveLayerIntoPkg(self, layer, file, layerName):
+        opts = QgsVectorFileWriter.SaveVectorOptions()
+        opts.driverName = "GPKG"
+        opts.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+        opts.layerName = layerName
+        error = QgsVectorFileWriter.writeAsVectorFormat(layer=layer,
+                                                        fileName=file,
+                                                        options=opts)
+        return error
+
     def run(self):
         """Run method that performs all the real work"""
 
@@ -258,10 +278,19 @@ class MappingEcosystemServices:
         if self.first_start == True:
             self.first_start = False
             self.dlg = MappingEcosystemServicesDialog()
+            self.dlg.helpButton.pressed.connect(self.helpAction)
+            self.dlg.outputFolderButton.pressed.connect(self.selectFolder)
+            self.dlg.sourceDeleteButton.clicked.connect(
+                self.sourceButtonDelete)
+            self.dlg.targetDeleteButton.clicked.connect(
+                self.targetButtonDelete)
 
         # show the dialog
         self.dlg.show()
-        self.dlg.helpButton.pressed.connect(self.helpAction)
+        self.dlg.formulaQBox.clear()
+        self.dlg.formulaQBox.addItems(['Linear', 'Non linear????'])
+        self.dlg.searchFolder.clear()
+
         ############## Load layers ######################
         # Fetch Study area
         layers = QgsProject.instance().layerTreeRoot().children()
@@ -293,9 +322,6 @@ class MappingEcosystemServices:
 
         ##############################
 
-        self.dlg.sourceDeleteButton.clicked.connect(self.sourceButtonDelete)
-        self.dlg.targetDeleteButton.clicked.connect(self.targetButtonDelete)
-
         self.dlg.source.setColumnCount(2)
         self.dlg.source.setHorizontalHeaderLabels(['Land use', 'Value'])
 
@@ -304,12 +330,17 @@ class MappingEcosystemServices:
 
         #####################################
         # current timestamp usefull for output files
-        self.timestamp = str(datetime.timestamp(datetime.now()))
+        self.timestamp = str(datetime.now().strftime("%d%m%Y_%H%M%S"))
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            print('OK pressed')
+            self.log('Ok Pressed')
+            outputFolder = self.dlg.searchFolder.displayText()
+            if outputFolder == '':
+                QMessageBox.information(
+                    None, "Warning!", "No datasets folder selected. Please select a folder.")
+                return
             studyAreaLayer = self.getSelectedStudyAreaLayer()
 
             OgrStudyAreaLayer = ogr.Open(studyAreaLayer.source())
@@ -319,30 +350,22 @@ class MappingEcosystemServices:
             context = dataobjects.createContext()
             context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
             outputLayer = 'Intersection'
-            outputFile = "ogr:dbname='/Users/lcalisto/Documents/myQGISPlugins/mapping-ecosystem-services/output_result_" + \
+
+            outputFile = "ogr:dbname='" + \
+                os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg' table="+outputLayer+" (geom) sql="
 
             processing.run("qgis:extractbylocation", {'INPUT': landUseLayer,
                                                       'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
-
-            opts = QgsVectorFileWriter.SaveVectorOptions()
-
-            opts.driverName = "GPKG"
-            outputFile = "/Users/lcalisto/Documents/myQGISPlugins/mapping-ecosystem-services/output_result_" + \
+            outputFile = os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg"
-            opts.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
-            opts.layerName = 'study_area'
-            error = QgsVectorFileWriter.writeAsVectorFormat(layer=studyAreaLayer,
-                                                            fileName=outputFile,
-                                                            options=opts)
+            self.saveLayerIntoPkg(studyAreaLayer, outputFile, 'study_area')
 
             srcdataSource = ogr.Open(
-                '/Users/lcalisto/Documents/myQGISPlugins/mapping-ecosystem-services/output_result_' + self.timestamp + '.gpkg')
+                os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg')
             print(srcdataSource)
-            layername = srcdataSource.GetLayer('Intersection').GetName()
-            print(layername)
             sql = '''SELECT * FROM Intersection LIMIT 10 '''.format(
-                layername=srcdataSource.GetLayer('Intersection'))
+                layername=outputLayer)
             # sql = '''SELECT *
             # FROM {layername}
             # ORDER BY GEOMETRY <-> ST_GeomFromText('POINT(1.272133332997328 -133640.3440999996)')
@@ -354,4 +377,5 @@ class MappingEcosystemServices:
             for feature in ResultSet:
                 print(feature)
                 print(feature.GetField("megaclasse"))
-            print('Finished')
+            # self.saveLayerIntoPkg(ResultSet, outputFile, 'test')
+            self.log('Ok Pressed')
