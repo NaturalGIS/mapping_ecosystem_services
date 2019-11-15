@@ -270,6 +270,18 @@ class MappingEcosystemServices:
                                                         options=opts)
         return error
 
+    def saveLayerIntoOgrPkg(self, layer, srcDataSource, layerName):
+        output_layer = srcDataSource.CreateLayer(
+            layerName, geom_type=layer.GetGeomType(), srs=layer.GetSpatialRef())
+        if output_layer != None:
+            defn = layer.GetLayerDefn()
+            for i in range(defn.GetFieldCount()):
+                output_layer.CreateField(defn.GetFieldDefn(i))
+
+            # Copying the features
+            for feat in layer:
+                output_layer.CreateFeature(feat)
+
     def run(self):
         """Run method that performs all the real work"""
 
@@ -343,39 +355,39 @@ class MappingEcosystemServices:
                 return
             studyAreaLayer = self.getSelectedStudyAreaLayer()
 
-            OgrStudyAreaLayer = ogr.Open(studyAreaLayer.source())
-
             landUseLayer = self.getSelectedLandUseLayer()
             # print(landUseLayer.source())
             context = dataobjects.createContext()
             context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
-            outputLayer = 'Intersection'
 
             outputFile = "ogr:dbname='" + \
                 os.path.join(outputFolder, 'output_result_') + \
-                self.timestamp+".gpkg' table="+outputLayer+" (geom) sql="
-
+                self.timestamp+".gpkg' table=land_use (geom) sql="
+            # extract poligons that intersect area of interest
             processing.run("qgis:extractbylocation", {'INPUT': landUseLayer,
                                                       'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
             outputFile = os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg"
             self.saveLayerIntoPkg(studyAreaLayer, outputFile, 'study_area')
 
-            srcdataSource = ogr.Open(
-                os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg')
-            print(srcdataSource)
-            sql = '''SELECT * FROM Intersection LIMIT 10 '''.format(
-                layername=outputLayer)
+            srcDataSource = ogr.Open(
+                os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg', 1)
+
+            sql = '''
+            SELECT a.megaclasse as megaclasse, b.name as name, a.geom as geom
+            FROM {landUseLayer} as a, {studyArea} as b
+            LIMIT 10 
+            '''.format(
+                landUseLayer="land_use", studyArea="study_area")
+
             # sql = '''SELECT *
             # FROM {layername}
             # ORDER BY GEOMETRY <-> ST_GeomFromText('POINT(1.272133332997328 -133640.3440999996)')
             # LIMIT 10 '''.format(
             #     layername=layername)
 
-            ResultSet = srcdataSource.ExecuteSQL(sql, dialect='SQLite')
-            print(ResultSet)
-            for feature in ResultSet:
-                print(feature)
-                print(feature.GetField("megaclasse"))
-            # self.saveLayerIntoPkg(ResultSet, outputFile, 'test')
+            ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
+
+            self.saveLayerIntoOgrPkg(ResultSet, srcDataSource, 'result')
+
             self.log('Ok Pressed')
