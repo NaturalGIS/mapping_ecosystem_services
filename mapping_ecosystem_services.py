@@ -166,7 +166,7 @@ class MappingEcosystemServices:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/mapping_ecosystem_services/icon.png'
+        icon_path = ':/mapping_ecosystem_services/icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Mapping Ecosystem Services'),
@@ -228,10 +228,12 @@ class MappingEcosystemServices:
             selectedLandUseFieldIndex = self.dlg.landUseFieldQbox.currentIndex()
             if selectedLandUseFieldIndex > 0:
                 fields = [field for field in selectedLayer.fields()]
-                selectedField = fields[selectedLandUseFieldIndex-1]
+                # I will need the selected field for later
+                self.landUseSelectedField = fields[selectedLandUseFieldIndex-1]
                 fieldData = set()
                 for feature in selectedLayer.getFeatures():
-                    fieldData.add(str(feature[selectedField.name()]))
+                    fieldData.add(
+                        str(feature[self.landUseSelectedField.name()]))
                 self.dlg.origin.clear()
                 self.dlg.origin.addItems(fieldData)
 
@@ -245,6 +247,26 @@ class MappingEcosystemServices:
     def getSelectedStudyAreaLayer(self):
         selectedStudyArea = self.dlg.studyAreaLayerQbox.currentText()
         return QgsProject.instance().mapLayersByName(selectedStudyArea)[0]
+
+    def getTargetItems(self):
+        items = []
+        for row in range(self.dlg.target.rowCount()):
+            item = self.dlg.target.item(row, 0)
+            text = str(item.text())
+            items.append(text)
+        return items
+
+    def getSourceItems(self):
+        items = []
+        values = []
+        for row in range(self.dlg.source.rowCount()):
+            item = self.dlg.source.item(row, 0)
+            value = self.dlg.source.item(row, 1)
+            text = str(item.text())
+            items.append(text)
+            number = float(value.text().replace(',', '.'))
+            values.append(number)
+        return {"items": items, "values": values}
 
     def helpAction(self):
         '''Display a help page'''
@@ -373,12 +395,27 @@ class MappingEcosystemServices:
             srcDataSource = ogr.Open(
                 os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg', 1)
 
+            print(self.dlg.maxDistanceSpinBox.value())
+            print(self.landUseSelectedField.name())
+            print(self.getTargetItems())
+            print(self.getSourceItems().get('items'))
+            print(self.getSourceItems().get('values'))
+
             sql = '''
-            SELECT a.megaclasse as megaclasse, b.name as name, a.geom as geom
-            FROM {landUseLayer} as a, {studyArea} as b
-            LIMIT 10 
+            SELECT a.{landUseField}, a.geom
+            FROM {landUseLayer} as a
+            where a.{landUseField} in {targetItems}
             '''.format(
-                landUseLayer="land_use", studyArea="study_area")
+                landUseLayer="land_use",
+                studyArea="study_area",
+                landUseField=self.landUseSelectedField.name(),
+                targetItems=', '.join([str(x) for x in self.getTargetItems()]),
+                sourceItems=', '.join([str(x) for x in self.getSourceItems().get('items')]),
+                sourceValues=', '.join([str(x) for x in self.getSourceItems().get('values')]),
+                maxDistance=self.dlg.maxDistanceSpinBox.value()
+            )
+            print(sql)
+            return
 
             # sql = '''SELECT *
             # FROM {layername}
