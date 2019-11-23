@@ -376,8 +376,16 @@ class MappingEcosystemServices:
                     None, "Warning!", "No datasets folder selected. Please select a folder.")
                 return
             studyAreaLayer = self.getSelectedStudyAreaLayer()
-
             landUseLayer = self.getSelectedLandUseLayer()
+            currentCRSID = 4326
+            try:
+                currentCRSID = landUseLayer.crs().postgisSrid()
+            except:
+                try:
+                    currentCRSID = QgsProject.instance().crs().postgisSrid()
+                except:
+                    currentCRSID = 4326
+
             # print(landUseLayer.source())
             context = dataobjects.createContext()
             context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
@@ -386,10 +394,12 @@ class MappingEcosystemServices:
                 os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg' table=land_use (geom) sql="
             # extract poligons that intersect area of interest
+
             processing.run("qgis:extractbylocation", {'INPUT': landUseLayer,
                                                       'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
             outputFile = os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg"
+
             self.saveLayerIntoPkg(studyAreaLayer, outputFile, 'study_area')
 
             srcDataSource = ogr.Open(
@@ -401,30 +411,47 @@ class MappingEcosystemServices:
             print(self.getSourceItems().get('items'))
             print(self.getSourceItems().get('values'))
 
+            sourceItems = self.getSourceItems().get('items')
+            sourceValues = self.getSourceItems().get('values')
+
             sql = '''
-            SELECT a.{landUseField}, a.geom
-            FROM {landUseLayer} as a
-            where a.{landUseField} in {targetItems}
+            with s as (
+                select *, case {landUseField} {caseStatment} end as value
+                from {landUseLayer}
+                where {landUseField} in ({sourceItems})
+            ),
+            t as (
+                    select *
+            from {landUseLayer}
+            where {landUseField} in ({targetItems})
+            )
+            SELECT ST_GeomFromText(AsWKT(st_ShortestLine(s.geom,t.geom)),{currentCRSID}) as geom, s.fid,t.fid, st_distance(s.geom,t.geom) as distance, CASE
+                    WHEN st_distance(s.geom,t.geom) = 0 then s.value/1
+                    WHEN st_distance(s.geom,t.geom)>0 then s.value/ st_distance(s.geom,t.geom)
+            END as computed
+            FROM s,t
+            where PtDistWithin(s.geom,t.geom,{maxDistance}) and st_distance(s.geom,t.geom)>0
             '''.format(
                 landUseLayer="land_use",
                 studyArea="study_area",
                 landUseField=self.landUseSelectedField.name(),
-                targetItems=', '.join([str(x) for x in self.getTargetItems()]),
-                sourceItems=', '.join([str(x) for x in self.getSourceItems().get('items')]),
-                sourceValues=', '.join([str(x) for x in self.getSourceItems().get('values')]),
-                maxDistance=self.dlg.maxDistanceSpinBox.value()
+                targetItems=', '.join(
+                    ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                sourceItems=', '.join(
+                    ['"'+str(x)+'"' for x in sourceItems]),
+                # sourceValues=', '.join(
+                #     [str(x) for x in sourceValues]),
+                caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                                      [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                currentCRSID=currentCRSID
             )
-            print(sql)
-            return
 
-            # sql = '''SELECT *
-            # FROM {layername}
-            # ORDER BY GEOMETRY <-> ST_GeomFromText('POINT(1.272133332997328 -133640.3440999996)')
-            # LIMIT 10 '''.format(
-            #     layername=layername)
+            print(sql)
 
             ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
-
-            self.saveLayerIntoOgrPkg(ResultSet, srcDataSource, 'result')
+            print('saving lines')
+            self.saveLayerIntoOgrPkg(
+                ResultSet, srcDataSource, 'distance_lines')
 
             self.log('Ok Pressed')
