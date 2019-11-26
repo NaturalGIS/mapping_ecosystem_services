@@ -2,6 +2,6 @@
   <qresource prefix="mapping_ecosystem_services">
     <file>img/grupodelogosfinanciamento-06.png</file>
     <file>img/uevora.png</file>
-    <file>icon.png</file>
+    <file>icon_new.png</file>
   </qresource>
 </RCC>

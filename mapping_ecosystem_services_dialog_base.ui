@@ -36,7 +36,7 @@
        <item>
         <widget class="QLabel" name="landUseFieldLabel_3">
          <property name="text">
-          <string>Max distance (CRS units):</string>
+          <string>Analysis distance (CRS units):</string>
          </property>
         </widget>
        </item>
@@ -53,7 +53,7 @@
        <item>
         <widget class="QLabel" name="label_6">
          <property name="text">
-          <string>Study area:</string>
+          <string>Study area/s:</string>
          </property>
         </widget>
        </item>
@@ -67,7 +67,7 @@
        <item>
         <widget class="QLabel" name="landUseInputLabel_2">
          <property name="text">
-          <string>Land use:</string>
+          <string>Land use areas (must be in the same CRS of study area/s layer):</string>
          </property>
         </widget>
        </item>
@@ -77,7 +77,7 @@
        <item>
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Land use field name:</string>
+          <string>Land use classification attribute:</string>
          </property>
         </widget>
        </item>
@@ -148,7 +148,7 @@
        <item>
         <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>Output raster pixel size (CRS units)</string>
+          <string>Output raster spatial resolution (CRS units)</string>
          </property>
         </widget>
        </item>
@@ -166,7 +166,7 @@
            <item>
             <widget class="QLabel" name="label_5">
              <property name="text">
-              <string>Origin</string>
+              <string>Land use classes</string>
              </property>
             </widget>
            </item>
@@ -212,7 +212,7 @@
            <item>
             <widget class="QLabel" name="label_2">
              <property name="text">
-              <string>Target</string>
+              <string>&quot;Target&quot; land use classes</string>
              </property>
             </widget>
            </item>
@@ -276,7 +276,7 @@
            <item>
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>Source</string>
+              <string>&quot;Source&quot; land use classes and values</string>
              </property>
             </widget>
            </item>

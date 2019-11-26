@@ -24,8 +24,8 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QPersistentModelIndex
 from qgis.PyQt.QtGui import QIcon, QStandardItemModel, QStandardItem
 from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox
-from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsVectorFileWriter, QgsMessageLog
-
+from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsVectorFileWriter, QgsMessageLog, QgsVectorLayer
+from qgis.utils import iface
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -33,7 +33,7 @@ from .resources import *
 from .mapping_ecosystem_services_dialog import MappingEcosystemServicesDialog
 import os.path
 import webbrowser
-from osgeo import ogr
+from osgeo import ogr, gdal, osr
 import processing
 from processing.tools import dataobjects
 from datetime import datetime
@@ -166,7 +166,7 @@ class MappingEcosystemServices:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/mapping_ecosystem_services/icon.png'
+        icon_path = ':/mapping_ecosystem_services/icon_new.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Mapping Ecosystem Services'),
@@ -293,9 +293,15 @@ class MappingEcosystemServices:
         return error
 
     def saveLayerIntoOgrPkg(self, layer, srcDataSource, layerName):
-        output_layer = srcDataSource.CreateLayer(
-            layerName, geom_type=layer.GetGeomType(), srs=layer.GetSpatialRef())
+        try:
+            output_layer = srcDataSource.CreateLayer(
+                layerName, geom_type=layer.GetGeomType(), srs=layer.GetSpatialRef())
+        except:
+            output_layer = srcDataSource.CreateLayer(
+                layerName)
         if output_layer != None:
+            print(layer)
+            print(layer.GetLayerDefn())
             defn = layer.GetLayerDefn()
             for i in range(defn.GetFieldCount()):
                 output_layer.CreateField(defn.GetFieldDefn(i))
@@ -322,7 +328,7 @@ class MappingEcosystemServices:
         # show the dialog
         self.dlg.show()
         self.dlg.formulaQBox.clear()
-        self.dlg.formulaQBox.addItems(['Linear', 'Non linear????'])
+        self.dlg.formulaQBox.addItems(['Linear', 'Gaussian'])
         self.dlg.searchFolder.clear()
 
         ############## Load layers ######################
@@ -405,53 +411,148 @@ class MappingEcosystemServices:
             srcDataSource = ogr.Open(
                 os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg', 1)
 
-            print(self.dlg.maxDistanceSpinBox.value())
-            print(self.landUseSelectedField.name())
-            print(self.getTargetItems())
-            print(self.getSourceItems().get('items'))
-            print(self.getSourceItems().get('values'))
-
             sourceItems = self.getSourceItems().get('items')
             sourceValues = self.getSourceItems().get('values')
+            formulaType = self.dlg.formulaQBox.currentText()
+            if formulaType == 'Linear':
+                sql = '''
+                    with s as (
+                        select *, case {landUseField} {caseStatment} end as value
+                        from {landUseLayer}
+                        where {landUseField} in ({sourceItems})
+                    ),
+                    t as (
+                            select *
+                    from {landUseLayer}
+                    where {landUseField} in ({targetItems})
+                    )
+                    SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, CASE
+                            WHEN st_distance(s.geom,t.geom) = 0 then s.value/1
+                            WHEN st_distance(s.geom,t.geom)>0 then s.value/ st_distance(s.geom,t.geom)
+                    END as computed
+                    FROM s,t
+                    where PtDistWithin(s.geom,t.geom,{maxDistance})
+                    '''.format(
+                    landUseLayer="land_use",
+                    studyArea="study_area",
+                    landUseField=self.landUseSelectedField.name(),
+                    targetItems=', '.join(
+                        ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                    sourceItems=', '.join(
+                        ['"'+str(x)+'"' for x in sourceItems]),
+                    # sourceValues=', '.join(
+                    #     [str(x) for x in sourceValues]),
+                    caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                        [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                    maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                    currentCRSID=currentCRSID
+                )
+            elif formulaType == 'Gaussian':
+                sql = '''
+                    with s as (
+                        select *, case {landUseField} {caseStatment} end as value
+                        from {landUseLayer}
+                        where {landUseField} in ({sourceItems})
+                    ),
+                    t as (
+                            select *
+                    from {landUseLayer}
+                    where {landUseField} in ({targetItems})
+                    )
 
+                    SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, 
+                    s.value*(power(2.72,((((st_distance(s.geom,t.geom)/{maxDistance}) * ((st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3))) as computed
+                    FROM s,t
+                    where PtDistWithin(s.geom,t.geom,{maxDistance})
+                    '''.format(
+                    landUseLayer="land_use",
+                    studyArea="study_area",
+                    landUseField=self.landUseSelectedField.name(),
+                    targetItems=', '.join(
+                        ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                    sourceItems=', '.join(
+                        ['"'+str(x)+'"' for x in sourceItems]),
+                    # sourceValues=', '.join(
+                    #     [str(x) for x in sourceValues]),
+                    caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                        [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                    maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                    currentCRSID=currentCRSID
+                )
+
+            ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
+            self.log('saving raw data')
+            self.saveLayerIntoOgrPkg(
+                ResultSet, srcDataSource, 'raw_data')
+            ResultSet = None
+
+            self.log('Extracting lines')
             sql = '''
-            with s as (
-                select *, case {landUseField} {caseStatment} end as value
-                from {landUseLayer}
-                where {landUseField} in ({sourceItems})
-            ),
-            t as (
-                    select *
-            from {landUseLayer}
-            where {landUseField} in ({targetItems})
-            )
-            SELECT ST_GeomFromText(AsWKT(st_ShortestLine(s.geom,t.geom)),{currentCRSID}) as geom, s.fid,t.fid, st_distance(s.geom,t.geom) as distance, CASE
-                    WHEN st_distance(s.geom,t.geom) = 0 then s.value/1
-                    WHEN st_distance(s.geom,t.geom)>0 then s.value/ st_distance(s.geom,t.geom)
-            END as computed
-            FROM s,t
-            where PtDistWithin(s.geom,t.geom,{maxDistance}) and st_distance(s.geom,t.geom)>0
+            SELECT ST_GeomFromText(a.geomText,{currentCRSID}) as geom, a.tfid as tfid, a.distance as distance
+            FROM {rawData} as a
+            where a.distance>0
             '''.format(
-                landUseLayer="land_use",
-                studyArea="study_area",
-                landUseField=self.landUseSelectedField.name(),
-                targetItems=', '.join(
-                    ['"'+str(x)+'"' for x in self.getTargetItems()]),
-                sourceItems=', '.join(
-                    ['"'+str(x)+'"' for x in sourceItems]),
-                # sourceValues=', '.join(
-                #     [str(x) for x in sourceValues]),
-                caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
-                                      [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
-                maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                rawData="raw_data",
                 currentCRSID=currentCRSID
             )
 
-            print(sql)
-
             ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
-            print('saving lines')
             self.saveLayerIntoOgrPkg(
                 ResultSet, srcDataSource, 'distance_lines')
+            ResultSet = None
+            self.log('Joinning poligons lines')
 
-            self.log('Ok Pressed')
+            sql = '''
+                select t.geom as geom, t.fid, sum(r.computed) as computed_value
+                from {rawData} as r, {landUseLayer}  as t
+                where r.tfid=t.fid
+                group by t.fid
+            '''.format(
+                rawData="raw_data",
+                landUseLayer="land_use"
+            )
+            ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
+            self.saveLayerIntoOgrPkg(
+                ResultSet, srcDataSource, 'computed_poligons')
+
+            rasterResol = self.dlg.outputRasterSizeBox.value()
+            # Prepare for Rasterize
+
+            pixelWidth = pixelHeight = rasterResol
+            x_min, x_max, y_min, y_max = ResultSet.GetExtent()
+            cols = int((x_max - x_min) / pixelHeight)
+            rows = int((y_max - y_min) / pixelWidth)
+            rasterPath = os.path.join(
+                outputFolder, self.timestamp+'computed.tif')
+            target_ds = gdal.GetDriverByName('GTiff').Create(
+                rasterPath, cols, rows, 1, gdal.GDT_Byte)
+            target_ds.SetGeoTransform(
+                (x_min, pixelWidth, 0, y_min, 0, pixelHeight))
+            band = target_ds.GetRasterBand(1)
+            band.FlushCache()
+            band.SetNoDataValue(0)
+            gdal.RasterizeLayer(target_ds, [1], ResultSet, options=[
+                'ATTRIBUTE=computed_value', 'noData=0'])
+            target_dsSRS = osr.SpatialReference()
+            target_dsSRS.ImportFromEPSG(currentCRSID)
+            target_ds.SetProjection(target_dsSRS.ExportToWkt())
+            band.FlushCache()
+            band = None
+            target_ds = None
+            self.log('Load datasets')
+            path_to_gpkg = os.path.join(
+                outputFolder, 'output_result_') + self.timestamp + '.gpkg'
+            gpkg_distance_layer = path_to_gpkg + "|layername=distance_lines"
+            gpkg_polygons_layer = path_to_gpkg + "|layername=computed_poligons"
+            vlayer = iface.addVectorLayer(
+                gpkg_distance_layer, "Distance lines", "ogr")
+            if not vlayer:
+                self.log("Layer Distance Lines failed to load!")
+            vlayer = iface.addVectorLayer(
+                gpkg_polygons_layer, "Polygons", "ogr")
+            if not vlayer:
+                self.log("Layer Polygons failed to load!")
+            vlayer = None
+            iface.addRasterLayer(rasterPath, "Computed Values")
+
+            self.log('Finalized')
