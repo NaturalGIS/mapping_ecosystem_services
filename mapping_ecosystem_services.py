@@ -23,9 +23,10 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QPersistentModelIndex
 from qgis.PyQt.QtGui import QIcon, QStandardItemModel, QStandardItem
-from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox, QProgressBar
 from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsVectorFileWriter, QgsMessageLog, QgsVectorLayer
 from qgis.utils import iface
+
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -373,13 +374,21 @@ class MappingEcosystemServices:
         self.timestamp = str(datetime.now().strftime("%d%m%Y_%H%M%S"))
         # Run the dialog event loop
         result = self.dlg.exec_()
+        ################## A progress bar ###################
+        # progress = QProgressBar()
+        # progress.setMaximum(100)
+        # progressMessageBar = iface.messageBar().createMessage("Loading layers ...")
+        # progressMessageBar.layout().addWidget(progress)
+        # iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
+        # progress.setValue(5)
+        ########################################################
         # See if OK was pressed
         if result:
-            self.log('Ok Pressed')
             outputFolder = self.dlg.searchFolder.displayText()
             if outputFolder == '':
                 QMessageBox.information(
                     None, "Warning!", "No datasets folder selected. Please select a folder.")
+                iface.messageBar().clearWidgets()
                 return
             studyAreaLayer = self.getSelectedStudyAreaLayer()
             landUseLayer = self.getSelectedLandUseLayer()
@@ -395,14 +404,14 @@ class MappingEcosystemServices:
             # print(landUseLayer.source())
             context = dataobjects.createContext()
             context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
-
+            # progressMessageBar.setText('Extracting polygons ...')
+            # progress.setValue(10)
             outputFile = "ogr:dbname='" + \
                 os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg' table=land_use (geom) sql="
             # extract poligons that intersect area of interest
-
-            processing.run("qgis:extractbylocation", {'INPUT': landUseLayer,
-                                                      'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
+            processing.run("qgis:extractbylocation", {
+                           'INPUT': landUseLayer, 'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
             outputFile = os.path.join(outputFolder, 'output_result_') + \
                 self.timestamp+".gpkg"
 
@@ -410,7 +419,8 @@ class MappingEcosystemServices:
 
             srcDataSource = ogr.Open(
                 os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg', 1)
-
+            # progressMessageBar.setText('Computing values ...')
+            # progress.setValue(20)
             sourceItems = self.getSourceItems().get('items')
             sourceValues = self.getSourceItems().get('values')
             formulaType = self.dlg.formulaQBox.currentText()
@@ -427,8 +437,8 @@ class MappingEcosystemServices:
                     where {landUseField} in ({targetItems})
                     )
                     SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, CASE
-                            WHEN st_distance(s.geom,t.geom) = 0 then s.value/1
-                            WHEN st_distance(s.geom,t.geom)>0 then s.value/ st_distance(s.geom,t.geom)
+                            WHEN st_distance(s.geom,t.geom) = 0 then (1-(1/{maxDistance}))*s.value
+                            WHEN st_distance(s.geom,t.geom)>0 then (1-(st_distance(s.geom,t.geom)/{maxDistance}))*s.value
                     END as computed
                     FROM s,t
                     where PtDistWithin(s.geom,t.geom,{maxDistance})
@@ -485,15 +495,17 @@ class MappingEcosystemServices:
             self.saveLayerIntoOgrPkg(
                 ResultSet, srcDataSource, 'raw_data')
             ResultSet = None
-
+            # progressMessageBar.setText('Extracting distance lines ...')
+            # progress.setValue(80)
             self.log('Extracting lines')
             sql = '''
-            SELECT ST_GeomFromText(a.geomText,{currentCRSID}) as geom, a.tfid as tfid, a.distance as distance
+            SELECT ST_GeomFromText(a.geomText,{currentCRSID}) as geom, a.tfid as tfid, a.distance as distance, a.geomText, a.sfid, a.{landUseField}, a.computed as computed_value
             FROM {rawData} as a
             where a.distance>0
             '''.format(
                 rawData="raw_data",
-                currentCRSID=currentCRSID
+                currentCRSID=currentCRSID,
+                landUseField=self.landUseSelectedField.name()
             )
 
             ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
@@ -501,7 +513,9 @@ class MappingEcosystemServices:
                 ResultSet, srcDataSource, 'distance_lines')
             ResultSet = None
             self.log('Joinning poligons lines')
-
+            # progressMessageBar.setText(
+            #     'Agregating polygon computed values ...')
+            # progress.setValue(80)
             sql = '''
                 select t.geom as geom, t.fid, sum(r.computed) as computed_value
                 from {rawData} as r, {landUseLayer}  as t
@@ -517,7 +531,8 @@ class MappingEcosystemServices:
 
             rasterResol = self.dlg.outputRasterSizeBox.value()
             # Prepare for Rasterize
-
+            # progressMessageBar.setText('Rasterizing results')
+            # progress.setValue(95)
             pixelWidth = pixelHeight = rasterResol
             x_min, x_max, y_min, y_max = ResultSet.GetExtent()
             cols = int((x_max - x_min) / pixelHeight)
@@ -554,5 +569,5 @@ class MappingEcosystemServices:
                 self.log("Layer Polygons failed to load!")
             vlayer = None
             iface.addRasterLayer(rasterPath, "Computed Values")
-
+            iface.messageBar().clearWidgets()
             self.log('Finalized')
