@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>814</width>
-    <height>785</height>
+    <width>693</width>
+    <height>763</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Mapping Ecosystem Services</string>
+   <string>Mapping Biocontrol Ecosystem Services</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>

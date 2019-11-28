@@ -170,7 +170,7 @@ class MappingEcosystemServices:
         icon_path = ':/mapping_ecosystem_services/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr(u'Mapping Ecosystem Services'),
+            text=self.tr(u'Mapping Biocontrol Ecosystem Services'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
@@ -181,7 +181,7 @@ class MappingEcosystemServices:
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(
-                self.tr(u'&Mapping Ecosystem Services'),
+                self.tr(u'&Mapping Biocontrol Ecosystem Services'),
                 action)
             self.iface.removeToolBarIcon(action)
 
