@@ -28,7 +28,21 @@ The "*Mapping Biocontrol Ecosystem Services*" QGIS plugin was developed by the U
 
 **What it does:**
 
-This plugin aims to 
+This plugin aims to compute the value that land use parcels with natural habitats give to neighboring parcels (the distance is arbitrary as user defined) with semi natural habitats:
+
+<img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/analysis.png">
+
+From the above image:
+
+3.1 and 3.2 are classes of parcels with a natural land use. 2.4 is a class of parcels with a semi natural land use.
+
+Parcel with id 1029 (class 3.1) contributes to parcels with id 809 and 818 (class 2.4).
+
+Parcel with id 1117 (class 3.2) contributes to parcels with id 809 and 818 (class 2.4).
+
+Parcel with id 1124 (class 3.2) contributes to parcels with id 809 and 818 (class 2.4).
+
+None of the parcels with classes 3.1/3.2 contributes in value to the parcel with id 839 (class 2.4) because the latter is behind the analysis distance.
 
 **Requirements:**
 
