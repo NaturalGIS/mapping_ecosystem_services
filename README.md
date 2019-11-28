@@ -26,7 +26,9 @@ main developer: Luís Calisto
 
 The "*Mapping Biocontrol Ecosystem Services*" QGIS plugin was developed by the University of Évora (Portugal) to map the biocontrol services that species occuring in natural and semi-natural habitats provide to agricultural areas. It calculates the overall biocontrol services provided by the natural habitat patches within a determined distance from the agricultural area. The biocontrol services provided can be distance weighted according to a linear decay function or a half-normal decay function.
 
-**How the plugin works and what it does:**
+**What it does:**
+
+This plugin aims to 
 
 **Requirements:**
 
@@ -50,11 +52,11 @@ The plugin needs QGIS >= 3.4 to work.
 
 **Instructions:**
 
-The "Mapping Biocontrol Ecosystem Services" can be installed (and updated) using QGIS's Plugins Manager ("Plugins" menu):
+The "Mapping Biocontrol Ecosystem Services" plugin can be installed (and updated) using QGIS's "Plugins Manager" ("Plugins" menu):
 
 ```Plugins >> Manage and Install Plugins```
 
-After the installation the plugin will be available in QGIS's "Plugins" menu and the "Plugins" toolbar.
+After the installation the plugin will be available in QGIS's "Plugins" menu and "Plugins" toolbar.
 
 The GUI looks like the following image:
 
@@ -101,6 +103,8 @@ while ***gaussian*** uses the following:
 10) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of natural habitat. To each class in this list a **value** must be defined (interger or decimal number)
 
 **Sample project/data:**
+
+https://mapserver.uevora.pt/~mapserver/sample_project_and_data.zip
 
 **References:**
 
