@@ -84,7 +84,7 @@ while ***gaussian*** uses the following:
 
     - a copy of the land use layer/map containing only the land use parcels belonging to the land use classes that have been chosen to be part of the analysis
 
-    - a **line** layer/map with the segments representing the min distance between parcels boundaries/centroids
+    - a **line** layer/map with the segments representing the min distance between parcels boundaries/centroids. In case uf using the "boundaries" strategy this layer **do not** contain the "zero length" lines representing the distance (equel to 0) of adjecent parcels.
 
     - a **raw_data** alphanumeric table containing all the distances and values computed between each parcel pair
     
@@ -96,9 +96,9 @@ while ***gaussian*** uses the following:
 
 8) "**Land use classes**": is the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
 
-9) "**"Target" land use classes**": 
+9) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of semi-natural habitat
 
-10) "**"Source" land use classes and values**":
+10) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of natural habitat. To each class in this list a **value** must be defined (interger or decimal number)
 
 **Sample project/data:**
 
