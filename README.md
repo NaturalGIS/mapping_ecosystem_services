@@ -32,7 +32,7 @@ This plugin aims to compute the value that land use parcels with natural habitat
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/analysis.png">
 
-From the above image:
+Example from the image above:
 
 3.1 and 3.2 are classes of parcels with a natural land use. 2.4 is a class of parcels with a semi natural land use.
 
