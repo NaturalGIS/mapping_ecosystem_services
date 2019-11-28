@@ -76,7 +76,7 @@ while ***gaussian*** uses the following:
 
 ```computed_value=source_value*((2,72^(((computed_distance/analysis_distance)(computed_distance/analysis_distance)-4)+0,92))/SQRT(6,3))```
 
-5) "**Output folder**": the plugin outputs several layers/tables to a user specified folder:
+6) "**Output folder**": the plugin outputs several layers/tables to a user specified folder:
 
     a) a Geopackage (GPKG) datasource/file containing the following vector layers/maps:
 
@@ -91,6 +91,14 @@ while ***gaussian*** uses the following:
     - a **polygon** layer/map containing a vector layer/map of the computed final results
 
     b) a raster layer/map of the computed final results
+   
+7) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map
+
+8) "**Land use classes**": is the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
+
+9) "**"Target" land use classes**": 
+
+10) "**"Source" land use classes and values**":
 
 **Sample project/data:**
 
