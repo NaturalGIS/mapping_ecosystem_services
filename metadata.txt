@@ -3,17 +3,18 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=Mapping Ecosystem Services
-qgisMinimumVersion=3.0
-description=This plugin maps ecosystems
+name=Mapping Biocontrol Ecosystem Services
+qgisMinimumVersion=3.4
+description=This QGIS plugin was developed by the University of Évora to map the biocontrol services that species occuring in natural and semi-natural habitats provide to agricultural areas. It calculates the overall biocontrol services provided by the natural habitat patches within a determined distance from the agricultural area. The biocontrol services provided can be distance weighted according to a linear decay function or a half-normal decay function. This plugin was developed within the University of Évora (Portugal) within the project "New tools for monitoring ecosystems services in traditional Alentejo production systems under intensification" (ALT20-03-0145-FEDER-000008), co-funded by Alentejo 2020, Portugal 2020 and European Fund for Regional Development.
 version=0.1
 author=NaturalGIS
-email=luis.calisto@hotmail.com
-
-about=This is a plugin that maps ecosystem services
-
+email=luis.calisto@naturalgis.pt
+about=A tool to map biocontrol services provided by species that occur in natural and semi-natural habitats.
 tracker=https://github.com/NaturalGIS/mapping_ecosystem_services
 repository=https://github.com/NaturalGIS/mapping_ecosystem_services
+changelog=0.1
+-First release of the plugin
+
 # End of mandatory metadata
 
 # Recommended items:
@@ -23,7 +24,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=analysis, ecology, land cover
+tags=ecology,land cover,patches,habitats
 
 homepage=https://github.com/NaturalGIS/mapping_ecosystem_services
 category=Plugins
