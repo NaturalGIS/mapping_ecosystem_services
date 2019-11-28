@@ -4,7 +4,7 @@
 
 ALT20-03-0145-FEDER-000008
 
-**Plugin concept by:**
+**Plugin concept by:** J. Tiago Marques; Nuno Faria; Rui Lourenço; Amália Oliveira; Pedro Pereira; Joana Silva; Diogo Figueiredo; Teresa Pinto-Correia; João E. Rabaça; António Mira
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/uevora.png" width="300">
 
@@ -24,17 +24,17 @@ main developer: Luís Calisto
 
 **Description:**
 
-The "*Mapping Biocontrol Ecosystem Services*" QGIS plugin was developed by the University of Évora (Portugal) to map the biocontrol services that species occuring in natural and semi-natural habitats provide to agricultural areas. It calculates the overall biocontrol services provided by the natural habitat patches within a determined distance from the agricultural area. The biocontrol services provided can be distance weighted according to a linear decay function or a half-normal decay function.
+The "*Mapping Biocontrol Ecosystem Services*" QGIS plugin was developed by J. Tiago Marques; Nuno Faria; Rui Lourenço; Amália Oliveira; Pedro Pereira; Joana Silva; João E. Rabaça; Teresa Pinto-Correia; Diogo Figueiredo; António Mira at the University of Évora (Portugal) to map the biocontrol services that species occuring in natural and semi-natural habitats provide to agricultural areas. It calculates the overall biocontrol services provided by the natural habitat patches within a determined distance from the agricultural area. The biocontrol services provided can be distance weighted by a linear or a half-normal decay function.
 
 **What it does:**
 
-This plugin aims to compute the value that land use parcels with natural habitats give to neighboring parcels (the distance is arbitrary as user defined) with semi natural habitats:
+This plugin aims to compute the value that natural habitats and semi-natural land use parcels provide to neighboring agricultural parcels (the distance is user defined).
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/analysis.png">
 
 Example from the image above:
 
-3.1 and 3.2 are classes of parcels with a natural land use. 2.4 is a class of parcels with a semi natural land use.
+3.1 and 3.2 are classes of parcels with a natural land use. 2.4 is a class of parcels with a agricultural land use.
 
 Parcel with id 1029 (class 3.1) contributes to parcels with id 809 and 818 (class 2.4).
 
@@ -42,7 +42,7 @@ Parcel with id 1117 (class 3.2) contributes to parcels with id 809 and 818 (clas
 
 Parcel with id 1124 (class 3.2) contributes to parcels with id 809 and 818 (class 2.4).
 
-None of the parcels with classes 3.1/3.2 contributes in value to the parcel with id 839 (class 2.4) because the latter is behind the analysis distance.
+None of the parcels with classes 3.1/3.2 contributes in value to the parcel with id 839 (class 2.4) because the latter is farther than the analysis distance.
 
 **Requirements:**
 
@@ -62,7 +62,7 @@ The plugin needs QGIS >= 3.4 to work.
 
 4) The land use map/layers **must** have an attribute/column that represent the land/parcels classification. This attribute can be numeric (integer or decimal) or text.
 
-5) The plugin needs to do a **distance analyasis**  that is known to be a slow type of analysis in GIS. Depending on the number of parcels involved in the analysis, the plugin can take quite a lot of time to compute the results, so **be patient**. The plugin allows to do the analysis using the parcels centroids rather than the parcels boundaries, if you want faster computation times use the centroids strategy.
+5) The plugin needs to do a **distance analyasis**  that is known to be a slow type of analysis in GIS. Depending on the number of parcels involved in the analysis, the plugin can take quite a long time to compute the results, so **please be patient**. The plugin allows to do the analysis using the parcels centroids rather than the parcels boundaries, if you want faster computation times use the centroids option.
 
 **Instructions:**
 
@@ -80,7 +80,7 @@ The GUI looks like the following image:
 
 2) "**Study area/s**": is the polygon layer (mandatory) containing the areas where the analysis will be run. Only the parcels that are fully within or crossing the study area/s polygons will be taken into account.
 
-3) "**Land use areas (must be in the same CRS of study area/s layer)**": is the polygon (mandatory) layer containing the land use parcels. The CRS os this layer **must** match the one of the study area/s.
+3) "**Land use areas (must be in the same CRS of study area/s layer)**": is the polygon (mandatory) layer containing the land use parcels. The CRS of this layer **must** match the one of the study area/s.
 
 4) "**Land use classification attribute**": is the column of the *Land use areas (must be in the same CRS of study area/s layer)* that holds the land use classification. 
 
@@ -100,7 +100,7 @@ while ***gaussian*** uses the following:
 
     - a copy of the land use layer/map containing only the land use parcels belonging to the land use classes that have been chosen to be part of the analysis
 
-    - a **line** layer/map with the segments representing the min distance between parcels boundaries/centroids. In case uf using the "boundaries" strategy this layer **do not** contain the "zero length" lines representing the distance (equel to 0) of adjecent parcels.
+    - a **line** layer/map with the segments representing the min distance between parcels boundaries/centroids. In case of using the "boundaries" strategy this layer **do not** contain the "zero length" lines representing the distance (equal to 0) of adjacent parcels.
 
     - a **raw_data** alphanumeric table containing all the distances and values computed between each parcel pair
     
@@ -110,11 +110,11 @@ while ***gaussian*** uses the following:
    
 7) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map
 
-8) "**Land use classes**": is the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
+8) "**Land use classes**": the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
 
-9) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of semi-natural habitat
+9) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of agricultural habitat
 
-10) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of natural habitat. To each class in this list a **value** must be defined (interger or decimal number)
+10) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of natural or semi-natural habitat. To each class in this list a **value** must be defined (interger or decimal number)
 
 **Sample project/data:**
 
@@ -122,4 +122,4 @@ https://mapserver.uevora.pt/~mapserver/sample_project_and_data.zip
 
 **References:**
 
-This plugin was developed within the University of Évora (Portugal) within the project "*New tools for monitoring ecosystems services in traditional Alentejo production systems under intensification*" (ALT20-03-0145-FEDER-000008), co-funded by Alentejo 2020, Portugal 2020 and European Fund for Regional Development.
+This plugin was developed at the University of Évora (Portugal) within the project "*New tools for monitoring ecosystems services in traditional Alentejo production systems under intensification*" (ALT20-03-0145-FEDER-000008), co-funded by Alentejo 2020, Portugal 2020 and European Fund for Regional Development.
