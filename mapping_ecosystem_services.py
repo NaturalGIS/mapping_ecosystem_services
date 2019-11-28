@@ -424,72 +424,139 @@ class MappingEcosystemServices:
             sourceItems = self.getSourceItems().get('items')
             sourceValues = self.getSourceItems().get('values')
             formulaType = self.dlg.formulaQBox.currentText()
-            if formulaType == 'Linear':
-                sql = '''
-                    with s as (
-                        select *, case {landUseField} {caseStatment} end as value
+            analysisType = self.dlg.analysisTypeBox.currentText()
+            if analysisType == 'Borders':
+                if formulaType == 'Linear':
+                    sql = '''
+                        with s as (
+                            select *, case {landUseField} {caseStatment} end as value
+                            from {landUseLayer}
+                            where {landUseField} in ({sourceItems})
+                        ),
+                        t as (
+                                select *
                         from {landUseLayer}
-                        where {landUseField} in ({sourceItems})
-                    ),
-                    t as (
-                            select *
-                    from {landUseLayer}
-                    where {landUseField} in ({targetItems})
+                        where {landUseField} in ({targetItems})
+                        )
+                        SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, CASE
+                                WHEN st_distance(s.geom,t.geom) = 0 then (1-(1/{maxDistance}))*s.value
+                                WHEN st_distance(s.geom,t.geom)>0 then (1-(st_distance(s.geom,t.geom)/{maxDistance}))*s.value
+                        END as computed
+                        FROM s,t
+                        where PtDistWithin(s.geom,t.geom,{maxDistance})
+                        '''.format(
+                        landUseLayer="land_use",
+                        studyArea="study_area",
+                        landUseField=self.landUseSelectedField.name(),
+                        targetItems=', '.join(
+                            ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                        sourceItems=', '.join(
+                            ['"'+str(x)+'"' for x in sourceItems]),
+                        # sourceValues=', '.join(
+                        #     [str(x) for x in sourceValues]),
+                        caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                            [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                        maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                        currentCRSID=currentCRSID
                     )
-                    SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, CASE
-                            WHEN st_distance(s.geom,t.geom) = 0 then (1-(1/{maxDistance}))*s.value
-                            WHEN st_distance(s.geom,t.geom)>0 then (1-(st_distance(s.geom,t.geom)/{maxDistance}))*s.value
-                    END as computed
-                    FROM s,t
-                    where PtDistWithin(s.geom,t.geom,{maxDistance})
-                    '''.format(
-                    landUseLayer="land_use",
-                    studyArea="study_area",
-                    landUseField=self.landUseSelectedField.name(),
-                    targetItems=', '.join(
-                        ['"'+str(x)+'"' for x in self.getTargetItems()]),
-                    sourceItems=', '.join(
-                        ['"'+str(x)+'"' for x in sourceItems]),
-                    # sourceValues=', '.join(
-                    #     [str(x) for x in sourceValues]),
-                    caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
-                        [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
-                    maxDistance=self.dlg.maxDistanceSpinBox.value(),
-                    currentCRSID=currentCRSID
-                )
-            elif formulaType == 'Gaussian':
-                sql = '''
-                    with s as (
-                        select *, case {landUseField} {caseStatment} end as value
+                elif formulaType == 'Gaussian':
+                    sql = '''
+                        with s as (
+                            select *, case {landUseField} {caseStatment} end as value
+                            from {landUseLayer}
+                            where {landUseField} in ({sourceItems})
+                        ),
+                        t as (
+                                select *
                         from {landUseLayer}
-                        where {landUseField} in ({sourceItems})
-                    ),
-                    t as (
-                            select *
-                    from {landUseLayer}
-                    where {landUseField} in ({targetItems})
+                        where {landUseField} in ({targetItems})
+                        )
+
+                        SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, 
+                        s.value*((power(2.72,(((st_distance(s.geom,t.geom)/{maxDistance}) * (st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
+                        FROM s,t
+                        where PtDistWithin(s.geom,t.geom,{maxDistance})
+                        '''.format(
+                        landUseLayer="land_use",
+                        studyArea="study_area",
+                        landUseField=self.landUseSelectedField.name(),
+                        targetItems=', '.join(
+                            ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                        sourceItems=', '.join(
+                            ['"'+str(x)+'"' for x in sourceItems]),
+                        # sourceValues=', '.join(
+                        #     [str(x) for x in sourceValues]),
+                        caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                            [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                        maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                        currentCRSID=currentCRSID
                     )
+            elif analysisType == 'Centroids':
+                if formulaType == 'Linear':
+                    sql = '''
+                        with s as (
+                            select *, case {landUseField} {caseStatment} end as value, st_centroid(geom) as centroid
+                            from {landUseLayer}
+                            where {landUseField} in ({sourceItems})
+                        ),
+                        t as (
+                                select *, st_centroid(geom) as centroid
+                        from {landUseLayer}
+                        where {landUseField} in ({targetItems})
+                        )
+                        SELECT AsWKT(st_ShortestLine(s.centroid,t.centroid)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.centroid,t.centroid) as distance, CASE
+                                WHEN st_distance(s.centroid,t.centroid) = 0 then (1-(1/{maxDistance}))*s.value
+                                WHEN st_distance(s.centroid,t.centroid)>0 then (1-(st_distance(s.centroid,t.centroid)/{maxDistance}))*s.value
+                        END as computed
+                        FROM s,t
+                        where PtDistWithin(s.centroid,t.centroid,{maxDistance})
+                        '''.format(
+                        landUseLayer="land_use",
+                        studyArea="study_area",
+                        landUseField=self.landUseSelectedField.name(),
+                        targetItems=', '.join(
+                            ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                        sourceItems=', '.join(
+                            ['"'+str(x)+'"' for x in sourceItems]),
+                        # sourceValues=', '.join(
+                        #     [str(x) for x in sourceValues]),
+                        caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                            [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                        maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                        currentCRSID=currentCRSID
+                    )
+                elif formulaType == 'Gaussian':
+                    sql = '''
+                        with s as (
+                            select *, case {landUseField} {caseStatment} end as value, st_centroid(geom) as centroid
+                            from {landUseLayer}
+                            where {landUseField} in ({sourceItems})
+                        ),
+                        t as (
+                                select *, st_centroid(geom) as centroid
+                        from {landUseLayer}
+                        where {landUseField} in ({targetItems})
+                        )
 
-                    SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, 
-                    s.value*((power(2.72,(((st_distance(s.geom,t.geom)/{maxDistance}) * (st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
-                    FROM s,t
-                    where PtDistWithin(s.geom,t.geom,{maxDistance})
-                    '''.format(
-                    landUseLayer="land_use",
-                    studyArea="study_area",
-                    landUseField=self.landUseSelectedField.name(),
-                    targetItems=', '.join(
-                        ['"'+str(x)+'"' for x in self.getTargetItems()]),
-                    sourceItems=', '.join(
-                        ['"'+str(x)+'"' for x in sourceItems]),
-                    # sourceValues=', '.join(
-                    #     [str(x) for x in sourceValues]),
-                    caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
-                        [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
-                    maxDistance=self.dlg.maxDistanceSpinBox.value(),
-                    currentCRSID=currentCRSID
-                )
-
+                        SELECT AsWKT(st_ShortestLine(s.centroid,t.centroid)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.centroid,t.centroid) as distance, 
+                        s.value*((power(2.72,(((st_distance(s.centroid,t.centroid)/{maxDistance}) * (st_distance(s.centroid,t.centroid)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
+                        FROM s,t
+                        where PtDistWithin(s.centroid,t.centroid,{maxDistance})
+                        '''.format(
+                        landUseLayer="land_use",
+                        studyArea="study_area",
+                        landUseField=self.landUseSelectedField.name(),
+                        targetItems=', '.join(
+                            ['"'+str(x)+'"' for x in self.getTargetItems()]),
+                        sourceItems=', '.join(
+                            ['"'+str(x)+'"' for x in sourceItems]),
+                        # sourceValues=', '.join(
+                        #     [str(x) for x in sourceValues]),
+                        caseStatment=' '.join(['WHEN "'+x+'" THEN '+str(y) for x, y in [
+                            [sourceItems[i], sourceValues[i]] for i in range(0, len(sourceItems))]]),
+                        maxDistance=self.dlg.maxDistanceSpinBox.value(),
+                        currentCRSID=currentCRSID
+                    )
             ResultSet = srcDataSource.ExecuteSQL(sql, dialect='SQLite')
             self.log('saving raw data')
             self.saveLayerIntoOgrPkg(
@@ -560,13 +627,13 @@ class MappingEcosystemServices:
             gpkg_distance_layer = path_to_gpkg + "|layername=distance_lines"
             gpkg_polygons_layer = path_to_gpkg + "|layername=computed_poligons"
             vlayer = iface.addVectorLayer(
-                gpkg_distance_layer, "Distance lines", "ogr")
-            if not vlayer:
-                self.log("Layer Distance Lines failed to load!")
-            vlayer = iface.addVectorLayer(
                 gpkg_polygons_layer, "Polygons", "ogr")
             if not vlayer:
                 self.log("Layer Polygons failed to load!")
+            vlayer = iface.addVectorLayer(
+                gpkg_distance_layer, "Distance lines", "ogr")
+            if not vlayer:
+                self.log("Layer Distance Lines failed to load!")
             vlayer = None
             iface.addRasterLayer(rasterPath, "Computed Values")
             iface.messageBar().clearWidgets()
