@@ -471,7 +471,7 @@ class MappingEcosystemServices:
                     )
 
                     SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, 
-                    s.value*(power(2.72,((((st_distance(s.geom,t.geom)/{maxDistance}) * ((st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3))) as computed
+                    s.value*((power(2.72,(((st_distance(s.geom,t.geom)/{maxDistance}) * (st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
                     FROM s,t
                     where PtDistWithin(s.geom,t.geom,{maxDistance})
                     '''.format(

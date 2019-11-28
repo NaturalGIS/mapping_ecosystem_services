@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>693</width>
-    <height>763</height>
+    <width>830</width>
+    <height>817</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -93,6 +93,27 @@
        </item>
        <item>
         <widget class="QComboBox" name="formulaQBox"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Analysis type:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox">
+         <item>
+          <property name="text">
+           <string>Borders</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Centroids</string>
+          </property>
+         </item>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_7">
