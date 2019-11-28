@@ -167,7 +167,7 @@ class MappingEcosystemServices:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/mapping_ecosystem_services/icon_new.png'
+        icon_path = ':/mapping_ecosystem_services/icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Mapping Ecosystem Services'),
