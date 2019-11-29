@@ -509,7 +509,7 @@ class MappingEcosystemServices:
                                 WHEN st_distance(s.centroid,t.centroid)>0 then (1-(st_distance(s.centroid,t.centroid)/{maxDistance}))*s.value
                         END as computed
                         FROM s,t
-                        where PtDistWithin(s.centroid,t.centroid,{maxDistance})
+                        where PtDistWithin(s.geom,t.geom,{maxDistance})
                         '''.format(
                         landUseLayer="land_use",
                         studyArea="study_area",
@@ -541,7 +541,7 @@ class MappingEcosystemServices:
                         SELECT AsWKT(st_ShortestLine(s.centroid,t.centroid)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.centroid,t.centroid) as distance, 
                         s.value*((power(2.72,(((st_distance(s.centroid,t.centroid)/{maxDistance}) * (st_distance(s.centroid,t.centroid)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
                         FROM s,t
-                        where PtDistWithin(s.centroid,t.centroid,{maxDistance})
+                        where PtDistWithin(s.geom,t.geom,{maxDistance})
                         '''.format(
                         landUseLayer="land_use",
                         studyArea="study_area",
