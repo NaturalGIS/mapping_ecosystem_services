@@ -62,7 +62,7 @@ The plugin needs QGIS >= 3.4 to work.
 
 4) The land use map/layers **must** have an attribute/column that represent the land/parcels classification. This attribute can be numeric (integer or decimal) or text.
 
-5) The plugin needs to do a **distance analyasis**  that is known to be a slow type of analysis in GIS. Depending on the number of parcels involved in the analysis, the plugin can take quite a long time to compute the results, so **please be patient**. The plugin allows to do the analysis using the parcels centroids rather than the parcels boundaries, if you want faster computation times use the centroids option.
+5) The plugin needs to do a **distance analyasis**  that is known to be a slow type of analysis in GIS. Depending on the number of parcels involved in the analysis, the plugin can take quite a long time to compute the results, so **please be patient**. The plugin allows to do the analysis using the parcels centroids rather than the parcels boundaries, if you want faster computation times use the "Centroids" option.
 
 **Instructions:**
 
@@ -88,11 +88,13 @@ The GUI looks like the following image:
 
 ```computed_value=(1-(computed_distance/analysis_distance))*source_value```
 
-while ***gaussian*** uses the following:
+while ***Gaussian*** uses the following:
 
 ```computed_value=source_value*((2,72^(((computed_distance/analysis_distance)(computed_distance/analysis_distance)-4)+0,92))/SQRT(6,3))```
 
-6) "**Output folder**": the plugin outputs several layers/tables to a user specified folder:
+6) "**Analysis strategy**": the plugin allows to choose between two strategies, "Centroids" (faster, less precise) and "Boundaries" (slower, more precise).
+
+7) "**Output folder**": the plugin outputs several layers/tables to a user specified folder:
 
     a) a Geopackage (GPKG) datasource/file containing the following vector layers/maps:
 
@@ -108,13 +110,13 @@ while ***gaussian*** uses the following:
 
     b) a raster layer/map of the computed final results
    
-7) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map
+8) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map
 
-8) "**Land use classes**": the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
+9) "**Land use classes**": the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
 
-9) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of agricultural habitat
+10) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of agricultural habitat
 
-10) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of natural or semi-natural habitat. To each class in this list a **value** must be defined (interger or decimal number)
+11) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing parcels of natural or semi-natural habitat. To each class in this list a **value** must be defined (interger or decimal number)
 
 **Sample project/data:**
 
