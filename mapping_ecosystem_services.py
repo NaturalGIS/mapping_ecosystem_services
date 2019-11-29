@@ -607,7 +607,7 @@ class MappingEcosystemServices:
             rasterPath = os.path.join(
                 outputFolder, self.timestamp+'computed.tif')
             target_ds = gdal.GetDriverByName('GTiff').Create(
-                rasterPath, cols, rows, 1, gdal.GDT_Byte)
+                rasterPath, cols, rows, 1, gdal.GDT_Float32)
             target_ds.SetGeoTransform(
                 (x_min, pixelWidth, 0, y_min, 0, pixelHeight))
             band = target_ds.GetRasterBand(1)
