@@ -97,7 +97,7 @@
        <item>
         <widget class="QLabel" name="label_9">
          <property name="text">
-          <string>Analysis distance type:</string>
+          <string>Analysis strategy:</string>
          </property>
         </widget>
        </item>
@@ -110,7 +110,7 @@
          </item>
          <item>
           <property name="text">
-           <string>Borders</string>
+           <string>Boundaries</string>
           </property>
          </item>
         </widget>
