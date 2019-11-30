@@ -409,27 +409,28 @@ class MappingEcosystemServices:
             # print(landUseLayer.source())
             context = dataobjects.createContext()
             context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
+            formulaType = self.dlg.formulaQBox.currentText()
+            analysisType = self.dlg.analysisTypeBox.currentText()
             # progressMessageBar.setText('Extracting polygons ...')
             # progress.setValue(10)
             outputFile = "ogr:dbname='" + \
-                os.path.join(outputFolder, 'output_result_') + \
+                os.path.join(outputFolder, 'output_result_'+analysisType+'_'+formulaType+'_') + \
                 self.timestamp+".gpkg' table=land_use (geom) sql="
             # extract poligons that intersect area of interest
             processing.run("qgis:extractbylocation", {
                            'INPUT': landUseLayer, 'INTERSECT': studyAreaLayer, 'OUTPUT': outputFile, 'PREDICATE': [0]})
-            outputFile = os.path.join(outputFolder, 'output_result_') + \
+            outputFile = os.path.join(outputFolder, 'output_result_'+analysisType+'_'+formulaType+'_') + \
                 self.timestamp+".gpkg"
 
             self.saveLayerIntoPkg(studyAreaLayer, outputFile, 'study_area')
 
             srcDataSource = ogr.Open(
-                os.path.join(outputFolder, 'output_result_') + self.timestamp + '.gpkg', 1)
+                os.path.join(outputFolder, 'output_result_'+analysisType+'_'+formulaType+'_') + self.timestamp + '.gpkg', 1)
             # progressMessageBar.setText('Computing values ...')
             # progress.setValue(20)
             sourceItems = self.getSourceItems().get('items')
             sourceValues = self.getSourceItems().get('values')
-            formulaType = self.dlg.formulaQBox.currentText()
-            analysisType = self.dlg.analysisTypeBox.currentText()
+
             if analysisType == 'Boundaries':
                 if formulaType == 'Linear':
                     sql = '''
@@ -610,7 +611,7 @@ class MappingEcosystemServices:
             cols = int((x_max - x_min) / pixelHeight)
             rows = int((y_max - y_min) / pixelWidth)
             rasterPath = os.path.join(
-                outputFolder, self.timestamp+'computed.tif')
+                outputFolder, self.timestamp+'_'+analysisType+'_'+formulaType+'_computed.tif')
             target_ds = gdal.GetDriverByName('GTiff').Create(
                 rasterPath, cols, rows, 1, gdal.GDT_Float32)
             target_ds.SetGeoTransform(
@@ -628,7 +629,7 @@ class MappingEcosystemServices:
             target_ds = None
             self.log('Load datasets')
             path_to_gpkg = os.path.join(
-                outputFolder, 'output_result_') + self.timestamp + '.gpkg'
+                outputFolder, 'output_result_'+analysisType+'_'+formulaType+'_') + self.timestamp + '.gpkg'
             gpkg_distance_layer = path_to_gpkg + "|layername=distance_lines"
             gpkg_polygons_layer = path_to_gpkg + "|layername=computed_poligons"
             vlayer = iface.addVectorLayer(
