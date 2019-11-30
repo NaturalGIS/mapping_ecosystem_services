@@ -24,7 +24,7 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QPersistentModelIndex
 from qgis.PyQt.QtGui import QIcon, QStandardItemModel, QStandardItem
 from qgis.PyQt.QtWidgets import QAction, QWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox, QProgressBar
-from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsVectorFileWriter, QgsMessageLog, QgsVectorLayer
+from qgis.core import Qgis, QgsProject, QgsFeatureRequest, QgsVectorFileWriter, QgsMessageLog, QgsVectorLayer, QgsLayerTreeLayer, QgsLayerTreeGroup
 from qgis.utils import iface
 
 
@@ -209,12 +209,21 @@ class MappingEcosystemServices:
         print(b)
         print(c)
 
+    def getLayers(self):
+        layers = QgsProject.instance().layerTreeRoot().children()
+        projectLayers = [layer for layer in layers if (isinstance(
+            layer, QgsLayerTreeLayer) and layer.layer().type() == 0)]
+        groupedLayers = [layer.findLayers() for layer in layers if (
+            isinstance(layer, QgsLayerTreeGroup))]
+        projectLayers.extend([layer for layer in groupedLayers[0] if (
+            isinstance(layer, QgsLayerTreeLayer) and layer.layer().type() == 0)])
+        return projectLayers
+
     def loadLandUseFields(self, a):
         selectedLayerIndex = self.dlg.landUseLayerQbox.currentIndex()
         self.dlg.landUseFieldQbox.clear()
         if selectedLayerIndex > 0:
-            layers = QgsProject.instance().layerTreeRoot().children()
-            layers = [layer for layer in layers if (layer.layer().type() == 0)]
+            layers = self.getLayers()
             selectedLayer = layers[selectedLayerIndex-1].layer()
             fieldnames = [field.name() for field in selectedLayer.fields()]
             self.dlg.landUseFieldQbox.addItem('')
@@ -223,8 +232,7 @@ class MappingEcosystemServices:
     def loadLandUseTableData(self, a):
         selectedLayerIndex = self.dlg.landUseLayerQbox.currentIndex()
         if selectedLayerIndex > 0:
-            layers = QgsProject.instance().layerTreeRoot().children()
-            layers = [layer for layer in layers if (layer.layer().type() == 0)]
+            layers = self.getLayers()
             selectedLayer = layers[selectedLayerIndex-1].layer()
             selectedLandUseFieldIndex = self.dlg.landUseFieldQbox.currentIndex()
             if selectedLandUseFieldIndex > 0:
@@ -334,10 +342,9 @@ class MappingEcosystemServices:
 
         ############## Load layers ######################
         # Fetch Study area
-        layers = QgsProject.instance().layerTreeRoot().children()
+        layers = self.getLayers()
         # only vector layers
         # https://qgis.org/pyqgis/master/core/QgsMapLayerType.html#qgis.core.QgsMapLayerType
-        layers = [layer for layer in layers if (layer.layer().type() == 0)]
         # Clear the contents of the comboBox from previous runs
         self.dlg.studyAreaLayerQbox.clear()
         # Populate the comboBox with names of all vector layers
