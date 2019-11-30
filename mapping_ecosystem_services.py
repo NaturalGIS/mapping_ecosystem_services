@@ -309,8 +309,6 @@ class MappingEcosystemServices:
             output_layer = srcDataSource.CreateLayer(
                 layerName)
         if output_layer != None:
-            print(layer)
-            print(layer.GetLayerDefn())
             defn = layer.GetLayerDefn()
             for i in range(defn.GetFieldCount()):
                 output_layer.CreateField(defn.GetFieldDefn(i))
