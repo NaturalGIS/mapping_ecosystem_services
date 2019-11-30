@@ -430,7 +430,7 @@ class MappingEcosystemServices:
             sourceValues = self.getSourceItems().get('values')
             formulaType = self.dlg.formulaQBox.currentText()
             analysisType = self.dlg.analysisTypeBox.currentText()
-            if analysisType == 'Borders':
+            if analysisType == 'Boundaries':
                 if formulaType == 'Linear':
                     sql = '''
                         with s as (
