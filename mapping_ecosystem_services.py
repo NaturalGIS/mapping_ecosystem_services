@@ -500,25 +500,25 @@ class MappingEcosystemServices:
                         maxDistance=self.dlg.maxDistanceSpinBox.value(),
                         currentCRSID=currentCRSID
                     )
-            elif analysisType == 'Centroids':
+            elif analysisType == 'Bounding boxes':
                 if formulaType == 'Linear':
                     sql = '''
                         with s as (
-                            select *, case {landUseField} {caseStatment} end as value, st_centroid(geom) as centroid
+                            select *, case {landUseField} {caseStatment} end as value, ST_Envelope(geom) as bbox
                             from {landUseLayer}
                             where {landUseField} in ({sourceItems})
                         ),
                         t as (
-                                select *, st_centroid(geom) as centroid
+                                select *, ST_Envelope(geom) as bbox
                         from {landUseLayer}
                         where {landUseField} in ({targetItems})
                         )
-                        SELECT AsWKT(st_ShortestLine(s.centroid,t.centroid)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.centroid,t.centroid) as distance, CASE
-                                WHEN st_distance(s.centroid,t.centroid) = 0 then (1-(1/{maxDistance}))*s.value
-                                WHEN st_distance(s.centroid,t.centroid)>0 then (1-(st_distance(s.centroid,t.centroid)/{maxDistance}))*s.value
+                        SELECT AsWKT(st_ShortestLine(s.bbox,t.bbox)) as geomText,AsWKT(s.bbox) as sbbox,AsWKT(t.bbox) as tbbox, t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.bbox,t.bbox) as distance, CASE
+                                WHEN st_distance(s.bbox,t.bbox) = 0 then (1-(1/{maxDistance}))*s.value
+                                WHEN st_distance(s.bbox,t.bbox)>0 then (1-(st_distance(s.bbox,t.bbox)/{maxDistance}))*s.value
                         END as computed
                         FROM s,t
-                        where PtDistWithin(s.centroid,t.centroid,{maxDistance})
+                        where PtDistWithin(s.bbox,t.bbox,{maxDistance})
                         '''.format(
                         landUseLayer="land_use",
                         studyArea="study_area",
@@ -537,20 +537,20 @@ class MappingEcosystemServices:
                 elif formulaType == 'Gaussian':
                     sql = '''
                         with s as (
-                            select *, case {landUseField} {caseStatment} end as value, st_centroid(geom) as centroid
+                            select *, case {landUseField} {caseStatment} end as value, ST_Envelope(geom) as bbox
                             from {landUseLayer}
                             where {landUseField} in ({sourceItems})
                         ),
                         t as (
-                                select *, st_centroid(geom) as centroid
+                                select *, ST_Envelope(geom) as bbox
                         from {landUseLayer}
                         where {landUseField} in ({targetItems})
                         )
 
-                        SELECT AsWKT(st_ShortestLine(s.centroid,t.centroid)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.centroid,t.centroid) as distance, 
-                        s.value*((power(2.72,(((st_distance(s.centroid,t.centroid)/{maxDistance}) * (st_distance(s.centroid,t.centroid)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
+                        SELECT AsWKT(st_ShortestLine(s.bbox,t.bbox)) as geomText,AsWKT(s.bbox) as sbbox,AsWKT(t.bbox) as tbbox,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.bbox,t.bbox) as distance, 
+                        s.value*((power(2.72,(((st_distance(s.bbox,t.bbox)/{maxDistance}) * (st_distance(s.bbox,t.bbox)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
                         FROM s,t
-                        where PtDistWithin(s.centroid,t.centroid,{maxDistance})
+                        where PtDistWithin(s.bbox,t.bbox,{maxDistance})
                         '''.format(
                         landUseLayer="land_use",
                         studyArea="study_area",
