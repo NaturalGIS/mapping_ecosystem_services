@@ -212,12 +212,12 @@ class MappingEcosystemServices:
     def getLayers(self):
         layers = QgsProject.instance().layerTreeRoot().children()
         projectLayers = [layer for layer in layers if (isinstance(
-            layer, QgsLayerTreeLayer) and layer.layer().type() == 0)]
+            layer, QgsLayerTreeLayer) and layer.layer().type() == 0) and layer.layer().geometryType() == 2]
         try:
             groupedLayers = [layer.findLayers() for layer in layers if (
                 isinstance(layer, QgsLayerTreeGroup))]
             projectLayers.extend([layer for layer in groupedLayers[0] if (
-                isinstance(layer, QgsLayerTreeLayer) and layer.layer().type() == 0)])
+                isinstance(layer, QgsLayerTreeLayer) and layer.layer().type() == 0) and layer.layer().geometryType() == 2])
         except:
             pass
         return projectLayers
