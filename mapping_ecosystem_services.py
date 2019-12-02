@@ -448,7 +448,7 @@ class MappingEcosystemServices:
                         where {landUseField} in ({targetItems})
                         )
                         SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, CASE
-                                WHEN st_distance(s.geom,t.geom) = 0 then (1-(1/{maxDistance}))*s.value
+                                WHEN st_distance(s.geom,t.geom) = 0 then s.value
                                 WHEN st_distance(s.geom,t.geom)>0 then (1-(st_distance(s.geom,t.geom)/{maxDistance}))*s.value
                         END as computed
                         FROM s,t
@@ -482,7 +482,7 @@ class MappingEcosystemServices:
                         )
 
                         SELECT AsWKT(st_ShortestLine(s.geom,t.geom)) as geomText ,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.geom,t.geom) as distance, 
-                        s.value*((power(2.72,(((st_distance(s.geom,t.geom)/{maxDistance}) * (st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
+                        s.value*((power(2.718281828459045235360287471352662497757247093699959574966,(((st_distance(s.geom,t.geom)/{maxDistance}) * (st_distance(s.geom,t.geom)/{maxDistance}) * -4) + 0.92)))/sqrt(6.283185307179586476925286766559005768394338798750211641949)) as computed
                         FROM s,t
                         where PtDistWithin(s.geom,t.geom,{maxDistance})
                         '''.format(
@@ -514,7 +514,7 @@ class MappingEcosystemServices:
                         where {landUseField} in ({targetItems})
                         )
                         SELECT AsWKT(st_ShortestLine(s.bbox,t.bbox)) as geomText,AsWKT(s.bbox) as sbbox,AsWKT(t.bbox) as tbbox, t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.bbox,t.bbox) as distance, CASE
-                                WHEN st_distance(s.bbox,t.bbox) = 0 then (1-(1/{maxDistance}))*s.value
+                                WHEN st_distance(s.bbox,t.bbox) = 0 then s.value
                                 WHEN st_distance(s.bbox,t.bbox)>0 then (1-(st_distance(s.bbox,t.bbox)/{maxDistance}))*s.value
                         END as computed
                         FROM s,t
@@ -548,7 +548,7 @@ class MappingEcosystemServices:
                         )
 
                         SELECT AsWKT(st_ShortestLine(s.bbox,t.bbox)) as geomText,AsWKT(s.bbox) as sbbox,AsWKT(t.bbox) as tbbox,t.fid as tfid,s.fid as sfid,t.{landUseField}, st_distance(s.bbox,t.bbox) as distance, 
-                        s.value*((power(2.72,(((st_distance(s.bbox,t.bbox)/{maxDistance}) * (st_distance(s.bbox,t.bbox)/{maxDistance}) * -4) + 0.92)))/sqrt(6.3)) as computed
+                        s.value*((power(2.718281828459045235360287471352662497757247093699959574966,(((st_distance(s.bbox,t.bbox)/{maxDistance}) * (st_distance(s.bbox,t.bbox)/{maxDistance}) * -4) + 0.92)))/sqrt(6.283185307179586476925286766559005768394338798750211641949)) as computed
                         FROM s,t
                         where PtDistWithin(s.bbox,t.bbox,{maxDistance})
                         '''.format(
