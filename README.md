@@ -62,7 +62,7 @@ The plugin needs QGIS >= 3.4 to work.
 
 4) The land use map/layers **must** have an attribute/column that represent the land/parcels classification. This attribute can be numeric (integer or decimal) or text.
 
-5) The plugin needs to do a **distance analyasis**  that is known to be a slow type of analysis in GIS. Depending on the number of parcels involved in the analysis, the plugin can take quite a long time to compute the results, so **please be patient**. The plugin allows to do the analysis using the parcels centroids rather than the parcels boundaries, if you want faster computation times use the "Centroids" option.
+5) The plugin needs to do a **distance analyasis**  that is known to be a slow type of analysis in GIS. Depending on the number of parcels involved in the analysis, the plugin can take quite a long time to compute the results, so **please be patient**. The plugin allows to do the analysis using the parcels bounding boxes rather than the parcels boundaries, if you want faster computation times use the "Bounding boxes" option.
 
 **Instructions:**
 
@@ -92,7 +92,7 @@ while ***Gaussian*** uses the following:
 
 ```computed_value=source_value*((2,72^(((computed_distance/analysis_distance)(computed_distance/analysis_distance)-4)+0,92))/SQRT(6,3))```
 
-6) "**Analysis strategy**": the plugin allows to choose between two strategies, "Centroids" (faster, less precise) and "Boundaries" (slower, more precise).
+6) "**Analysis strategy**": the plugin allows to choose between two strategies, "Bounding boxes" (faster, less precise) and "Boundaries" (slower, more precise).
 
 7) "**Output folder**": the plugin outputs several layers/tables to a user specified folder:
 
@@ -110,7 +110,7 @@ while ***Gaussian*** uses the following:
 
     b) a raster layer/map of the computed final results
    
-8) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map
+8) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map. The resolution must be high enough for the rasterization process be able to generate the clusters representing very small parcels
 
 9) "**Land use classes**": the list of (unique) land use classes automatically populated after chosing the **Land use classification attribute**
 
