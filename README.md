@@ -24,17 +24,17 @@ QGIS plugin main developer: Luís Calisto (NaturalGIS)
 
 Bash scripts main developer: Giovanni Manghi (NaturalGIS)
 
-**Description:**
+## Description
 
 "*Mapping Biocontrol Ecosystem Services*" are a QGIS plugin and set of scripts that were conceived by J. Tiago Marques; Nuno Faria; Rui Lourenço; Amália Oliveira; Pedro F. Pereira; Joana Silva; João E. Rabaça; Teresa Pinto-Correia; Diogo Figueiredo; António Mira at the University of Évora (Portugal) to map the biocontrol services that species occuring in natural and semi-natural habitats provide to agricultural areas. It calculates the overall biocontrol services provided by the natural habitat patches within a determined distance from the agricultural area. The biocontrol services provided can be distance weighted by a linear or a half-normal decay function.
 
-**What it does:**
+## Goal
 
-This plugin aims to compute the value that natural habitats and semi-natural land use patches provide to neighbouring agricultural areas (the distance is user defined).
+This QGIS plugin and the scripts aim to compute the value that natural habitats and semi-natural land use patches provide to neighbouring agricultural areas (the distance is user defined).
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/analysis.png">
 
-Example from the image above:
+Example from the above image:
 
 3.1 and 3.2 are classes of patches with a natural land use. 2.4 is a class of patches with a agricultural land use.
 
@@ -46,13 +46,15 @@ Patch with id 1124 (class 3.2) contributes to patches with id 809 and 818 (class
 
 None of the patches with classes 3.1/3.2 contributes in value to the patches with id 839 (class 2.4) because the latter is farther than the analysis distance.
 
-**Requirements:**
+## Requirements and considerations
 
 The **QGIS plugin** needs QGIS >= 3.4 to work. It is written in Python and does not need any particular library other than the ones installed by default by any QGIS installer. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
 
-The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies fot the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS server are supported (support for remote connections can be easily added if needed).
+The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed).
 
-Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to.
+Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to. 
+
+The scripts are largerly faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts allows to batch process data which allows to process automatically a lot of data.
 
 ## QGIS plugin: data preparation and known limitations:
 
@@ -70,7 +72,7 @@ Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the pr
 
 5) The plugin needs to do a **distance analyasis**, a type if GIS analysis that is known to be a slow when large amount of data need to be processed. Depending on the number of patches  involved in the analysis, the plugin can take quite a long time to compute the results so **please be patient**. The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
 
-**QGIS plugin installations and usage:**
+## QGIS plugin installation and usage
 
 The "Mapping Biocontrol Ecosystem Services" QGUS plugin can be installed (and updated) using QGIS's "Plugins Manager" ("Plugins" menu):
 
@@ -124,14 +126,14 @@ while ***Gaussian*** uses the following:
 
 11) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing patches of natural or semi-natural habitat. To each class in this list a **value** must be defined (interger or decimal number).
 
-**Sample data:**
+## Sample data
 
 https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/analysis_scripts/sample_data.gpkg
 
-**Funding:**
+## Funding
 
 This plugin was developed at the University of Évora (Portugal) within the project "*New tools for monitoring ecosystems services in traditional Alentejo production systems under intensification*" (ALT20-03-0145-FEDER-000008), co-funded by Alentejo 2020, Portugal 2020 and European Fund for Regional Development.
 
-**References:**
+## References
 
 TO-DO
