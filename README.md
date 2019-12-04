@@ -22,7 +22,7 @@ email: info@naturalgis.pt
 
 QGIS plugin main developer: Luís Calisto (NaturalGIS)
 
-Bash scripts main developer: Giovanni Manghi (NaturalGIS)
+Scripts main developer: Giovanni Manghi (NaturalGIS)
 
 ## Description
 
@@ -54,9 +54,9 @@ The **scripts** are meant to run from within a GNU/Linux terminal. They were dev
 
 Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to. 
 
-The scripts are largerly faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts allows to batch process data which allows to process automatically a lot of data.
+The scripts are largerly faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts was created to be run as a batch process that allows to analyze automatically large amount of data.
 
-## QGIS plugin: data preparation and known limitations:
+## QGIS plugin: data preparation
 
 1) The plugin **needs** two different **polygon** layers as inputs:
 
