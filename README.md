@@ -50,7 +50,7 @@ None of the patches with classes 3.1/3.2 contributes in value to the patches wit
 
 The **QGIS plugin** needs QGIS >= 3.4 to work. It is written in Python and does not need any particular library other than the ones installed by default by any QGIS installer. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
 
-The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed).
+The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed). This scripts take advantage of the internal **geoprocessing** capabilities os a spatially enabled database like PostgreSQL/PostGIS.
 
 Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to. 
 
@@ -74,7 +74,7 @@ The scripts are largerly faster than the QGIS plugin so, to analyze large amount
 
 ## QGIS plugin installation and usage
 
-The "Mapping Biocontrol Ecosystem Services" QGUS plugin can be installed (and updated) using QGIS's "Plugins Manager" ("Plugins" menu):
+The "Mapping Biocontrol Ecosystem Services" QGIS plugin can be installed (and updated) using QGIS's "Plugins Manager" ("Plugins" menu):
 
 ```Plugins >> Manage and Install Plugins```
 
@@ -125,6 +125,20 @@ while ***Gaussian*** uses the following:
 10) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing patches of agricultural habitats.
 
 11) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing patches of natural or semi-natural habitat. To each class in this list a **value** must be defined (interger or decimal number).
+
+## Scripts description and usage
+
+### description
+
+The scripts are found here: https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_scripts along with a Geopackage (GPKG) datasource containing sample data.
+
+**init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate Linux distribution) machine: PostgreSQL/PostGIS and gdal-bin. This scripts also allows to create a database and a database user that can be used for the analysis of the data. It is not required to tun this script if the computer being used has already a PostgreSQL/PostGIS installation and given that a database/database user (with write permissions) are already created and available to be used.
+
+**analyize_data_linux.sh**: this the script used to analyze the data. It guides the user to a series of interactive questions (connection parameters to the database, analysis parameters, location of the input datasource, etc.) then it runs the analysis. The results are outputted as layers/tables inside the database and also as a Geopackage (GPKG) datasource.
+
+**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to batch process a folder with >1 Geopckage (GPKG) dataources in it.
+
+### data preparation and usage
 
 ## Sample data
 
