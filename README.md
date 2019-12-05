@@ -50,7 +50,7 @@ None of the patches with classes 3.1/3.2 contributes in value to the patches wit
 
 The **QGIS plugin** needs QGIS >= 3.4 to work. It is written in Python and does not need any particular library other than the ones installed by default by any QGIS installer. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
 
-The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed). This scripts take advantage of the internal **geoprocessing** capabilities os a spatially enabled database like PostgreSQL/PostGIS.
+The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed). This scripts take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS.
 
 Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to. 
 
@@ -155,6 +155,36 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
     - a column named **value** (numeric): this must contain the numeric value (integer or decimal) associated to the "source" patches
     
 ### Usage
+
+- Step1: After downloading the scripts make them executable
+
+    ```chmod +x *.sh```
+
+- Step2 (optional): install scripts dependencies and initialize/create a necessary database and database user
+
+    ```sudo ./init_postgis_database_linux.sh```
+    
+    This script will do in order:
+    
+    - refresh the repositories lists
+    
+    - install updates for the operating system
+    
+    - install PostgreSQL, PostGIS and gdal-bin
+    
+    - ask to choose a name for the database that is being created
+    
+    - ask to choose a (database) username that will be the owner of the database created in the previous step
+    
+    - ask to choose a password for the database user
+    
+    - add the PostGIS extension to the database that is being created
+    
+    - set the proper permissions on the "geometry_columns" table
+
+- Step3: run the analysis
+
+    TO-DO
 
 ## Sample data
 
