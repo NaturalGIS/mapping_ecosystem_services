@@ -54,7 +54,7 @@ The **scripts** are meant to run from within a GNU/Linux terminal. They were dev
 
 Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to. 
 
-The scripts are largerly faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts was created to be run as a batch process that allows to analyze automatically large amount of data.
+The scripts are largerly faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts was created to be run as a batch process that allows to analyze automatically several different input datasets.
 
 ## QGIS plugin: data preparation
 
@@ -70,7 +70,7 @@ The scripts are largerly faster than the QGIS plugin so, to analyze large amount
 
 4) The land use map/layers **must** have an attribute/column that represent the patches classification. This attribute can be numeric (integer or decimal) or text.
 
-5) The plugin needs to do a **distance analyasis**, a type if GIS analysis that is known to be a slow when large amount of data need to be processed. Depending on the number of patches  involved in the analysis, the plugin can take quite a long time to compute the results so **please be patient**. The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
+5) As part of the computations the  plugin does a **distance analyasis**, a type if GIS analysis that is known to be slow when large amount is being processed. Depending on the number of patches involved in the analysis the plugin can take quite a long time to compute the results so **please be patient**. The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
 
 ## QGIS plugin installation and usage
 
@@ -128,7 +128,7 @@ while ***Gaussian*** uses the following:
 
 ## Scripts description and usage
 
-### description
+### Description
 
 The scripts are found here: https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_scripts along with a Geopackage (GPKG) datasource containing sample data.
 
@@ -138,7 +138,23 @@ The scripts are found here: https://github.com/NaturalGIS/mapping_ecosystem_serv
 
 **analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to batch process a folder with >1 Geopckage (GPKG) dataources in it.
 
-### data preparation and usage
+### Data preparation
+
+The input data must be prepared in a very precise way. This can be easily done within Desktop GIS applications like QGIS.
+
+The input layers must exist within a **single** Geopackage (GPKG) file (this file can be named in any way) that must contains two layers:
+
+- a POLYGON layer representing the area/s map. This layer **MUST** be named "**study_area**". The attributes for this layer are not important.
+
+- a POLYGON layer representing land use map. This layer **MUST** be named "**land_use**". This layer **MUST** have a few **mandatory** columns, that **MUST** be named and filled in a very specific way:
+
+    - a column name **class** (can be text or numeric): this must contain the land use classification
+
+    - a column named **type** (text): this must contain the words "**target**" or "**source**" associated with the parcels that are    meant to be used as "target" and "source" in the analysis
+
+    - a column named **value** (numeric): this must contain the numeric value (integer or decimal) associated to the "source" patches
+    
+### Usage
 
 ## Sample data
 
