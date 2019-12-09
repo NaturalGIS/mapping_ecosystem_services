@@ -6,6 +6,8 @@ ALT20-03-0145-FEDER-000008
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/uevora.png" width="300">
 
+**Contact:** jtiagom@uevora.pt
+
 **Co-Funded by:**
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/grupodelogosfinanciamento-06.png" width="600">
