@@ -34,7 +34,7 @@ This QGIS plugin and the scripts aim to compute the value that natural habitats 
 
 Example from the above image:
 
-3.1 and 3.2 are classes of patches with a natural land use. 2.4 is a class of patches with a agricultural land use.
+3.1 and 3.2 are classes of patches with a natural land use. 2.4 is a class of patches with agricultural land use.
 
 Patch with id 1029 (class 3.1) contributes to patches with id 809 and 818 (class 2.4).
 
@@ -48,11 +48,11 @@ None of the patches with classes 3.1/3.2 contributes in value to the patches wit
 
 The **QGIS plugin** needs QGIS >= 3.4 to work. It is written in Python and does not need any particular library other than the ones installed by default by any QGIS installer. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
 
-The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikley to ever happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed). This scripts take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS.
+The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikely to happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed). This scripts take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS.
 
-Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem thay are tasked to. 
+Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem they are tasked to. 
 
-The scripts are largerly faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts was created to be run as a batch process that allows to analyze automatically several different input datasets.
+The scripts are faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts was created to be run as a batch process that allows to analyze automatically several different input datasets.
 
 ## QGIS plugin: data preparation
 
@@ -68,7 +68,7 @@ The scripts are largerly faster than the QGIS plugin so, to analyze large amount
 
 4) The land use map/layers **must** have an attribute/column that represent the patches classification. This attribute can be numeric (integer or decimal) or text.
 
-5) As part of the computations the  plugin does a **distance analyasis**, a type if GIS analysis that is known to be slow when large amount is being processed. Depending on the number of patches involved in the analysis the plugin can take quite a long time to compute the results so **please be patient**. The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
+5) As part of the computations the  plugin does a **distance analysis**, a type if GIS analysis that is known to be slow when large amount is being processed. Depending on the number of patches involved in the analysis the plugin can take quite a long time to compute the results so **please be patient**. The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
 
 ## QGIS plugin installation and usage
 
@@ -122,7 +122,7 @@ while ***Gaussian*** uses the following:
 
 10) "**Target land use classes**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing patches of agricultural habitats.
 
-11) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing patches of natural or semi-natural habitat. To each class in this list a **value** must be defined (interger or decimal number).
+11) "**Source land use classes and values**": user populated (by drag and drop from the **Land use classes** list) list of land use classes representing patches of natural or semi-natural habitat. To each class on this list a **value** must be defined (interger or decimal number). For example the average species richness of bats or insectivorous birds.
 
 ## Scripts description and usage
 
