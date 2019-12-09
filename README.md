@@ -1,7 +1,5 @@
 # Mapping Biocontrol Ecosystem Services
 
-**Reference:**
-
 ALT20-03-0145-FEDER-000008
 
 **Plugin concept by:** J. Tiago Marques; Nuno Faria; Rui Lourenço; Amália Oliveira; Pedro F. Pereira; Joana Silva; Diogo Figueiredo; Teresa Pinto-Correia; João E. Rabaça; António Mira
@@ -196,4 +194,5 @@ This plugin was developed at the University of Évora (Portugal) within the proj
 
 ## References
 
-TO-DO
+*Rega, C., Bartual, A. M., Bocci, G., Sutter, L., Albrecht, M., Moonen, A.-C., Jeanneret, P., van der Werf, W., Pfister, S. C., Holland, J. M. and Paracchini, M. L. (2018). A pan-European model of 
+landscape potential to support natural pest control services. Ecological Indicators, 90, 653-664.*
