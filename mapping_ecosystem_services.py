@@ -320,6 +320,24 @@ class MappingEcosystemServices:
         else:
             buttonOK.setEnabled(False)
 
+    def checkSameCRS(self):
+        try:
+            studyAreaLayer = self.getSelectedStudyAreaLayer()
+            landUseLayer = self.getSelectedLandUseLayer()
+            try:
+                landUseLayerCRSID = landUseLayer.crs().toWkt()
+                studyAreaLayerCRSID = studyAreaLayer.crs().toWkt()
+                if landUseLayerCRSID == studyAreaLayerCRSID:
+                    self.checkOK()
+                else:
+                    self.log('Study area and land use have different CRS.')
+                    QMessageBox.information(
+                        None, "Warning!", "Study area and land use have different CRS.")
+            except:
+                return None
+        except:
+            return None
+
     def saveLayerIntoOgrPkg(self, layer, srcDataSource, layerName):
         try:
             output_layer = srcDataSource.CreateLayer(
@@ -358,8 +376,8 @@ class MappingEcosystemServices:
         self.dlg.searchFolder.clear()
         # connect check OK function
         self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkOK)
-        self.dlg.studyAreaLayerQbox.activated.connect(self.checkOK)
-        self.dlg.landUseLayerQbox.activated.connect(self.checkOK)
+        self.dlg.studyAreaLayerQbox.activated.connect(self.checkSameCRS)
+        self.dlg.landUseLayerQbox.activated.connect(self.checkSameCRS)
         self.dlg.landUseFieldQbox.activated.connect(self.checkOK)
         self.dlg.searchFolder.textChanged.connect(self.checkOK)
         self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkOK)
@@ -394,11 +412,8 @@ class MappingEcosystemServices:
             self.loadLandUseTableData)
 
         ##############################
-
         self.dlg.source.setColumnCount(2)
         self.dlg.source.setHorizontalHeaderLabels(['Land use', 'Value'])
-
-        # self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
         self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
         buttonOK = self.dlg.button_box.buttons()[0]
         buttonOK.setEnabled(False)
@@ -407,14 +422,6 @@ class MappingEcosystemServices:
         self.timestamp = str(datetime.now().strftime("%d%m%Y_%H%M%S"))
         # Run the dialog event loop
         result = self.dlg.exec_()
-        self.checkOK()
-        ################## A progress bar ###################
-        # progress = QProgressBar()
-        # progress.setMaximum(100)
-        # progressMessageBar = iface.messageBar().createMessage("Loading layers ...")
-        # progressMessageBar.layout().addWidget(progress)
-        # iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
-        # progress.setValue(5)
         ########################################################
         # See if OK was pressed
         if result:
