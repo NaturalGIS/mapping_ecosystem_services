@@ -320,10 +320,17 @@ class MappingEcosystemServices:
         else:
             buttonOK.setEnabled(False)
 
-    def checkSameCRS(self):
+    def checkCRS(self):
         try:
             studyAreaLayer = self.getSelectedStudyAreaLayer()
             landUseLayer = self.getSelectedLandUseLayer()
+            if landUseLayer.crs().isGeographic() or studyAreaLayer.crs().isGeographic():
+                self.dlg.button_box.buttons()[0].setEnabled(False)
+                self.log(
+                    'Geographic CRSs are not allowed. Please change to projected.')
+                QMessageBox.information(
+                    None, "Warning!", "Geographic CRSs are not allowed. Please change to projected.")
+                return
             try:
                 landUseLayerCRSID = landUseLayer.crs().toWkt()
                 studyAreaLayerCRSID = studyAreaLayer.crs().toWkt()
@@ -334,9 +341,9 @@ class MappingEcosystemServices:
                     QMessageBox.information(
                         None, "Warning!", "Study area and land use have different CRS.")
             except:
-                return None
+                return
         except:
-            return None
+            return
 
     def saveLayerIntoOgrPkg(self, layer, srcDataSource, layerName):
         try:
@@ -376,8 +383,8 @@ class MappingEcosystemServices:
         self.dlg.searchFolder.clear()
         # connect check OK function
         self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkOK)
-        self.dlg.studyAreaLayerQbox.activated.connect(self.checkSameCRS)
-        self.dlg.landUseLayerQbox.activated.connect(self.checkSameCRS)
+        self.dlg.studyAreaLayerQbox.activated.connect(self.checkCRS)
+        self.dlg.landUseLayerQbox.activated.connect(self.checkCRS)
         self.dlg.landUseFieldQbox.activated.connect(self.checkOK)
         self.dlg.searchFolder.textChanged.connect(self.checkOK)
         self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkOK)
