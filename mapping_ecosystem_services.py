@@ -247,7 +247,9 @@ class MappingEcosystemServices:
                     fieldData.add(
                         str(feature[self.landUseSelectedField.name()]))
                 self.dlg.origin.clear()
-                self.dlg.origin.addItems(fieldData)
+                fieldDataList = list(fieldData)
+                fieldDataList.sort()
+                self.dlg.origin.addItems(fieldDataList)
 
     def getSelectedLandUseLayer(self):
         selectedLandUse = self.dlg.landUseLayerQbox.currentText()
