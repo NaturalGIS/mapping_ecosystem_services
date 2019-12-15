@@ -380,7 +380,7 @@ class MappingEcosystemServices:
         self.dlg.show()
         self.dlg.formulaQBox.clear()
         self.dlg.formulaQBox.addItems(['Linear', 'Gaussian'])
-        self.dlg.searchFolder.clear()
+        # self.dlg.searchFolder.clear()
         # connect check OK function
         self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkOK)
         self.dlg.studyAreaLayerQbox.activated.connect(self.checkCRS)
