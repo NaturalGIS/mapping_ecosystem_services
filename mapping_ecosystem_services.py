@@ -306,6 +306,20 @@ class MappingEcosystemServices:
                                                         options=opts)
         return error
 
+    def checkOK(self):
+        buttonOK = self.dlg.button_box.buttons()[0]
+        if self.dlg.maxDistanceSpinBox.value() != '' and\
+                self.dlg.studyAreaLayerQbox.currentText() != '' and\
+                self.dlg.landUseLayerQbox.currentText() != '' and\
+                self.dlg.landUseFieldQbox.currentText() != '' and\
+                self.dlg.searchFolder.displayText() != '' and\
+                self.dlg.outputRasterSizeBox.value() != ''and\
+                self.dlg.target.rowCount() != 0 and \
+                self.dlg.source.rowCount() != 0:
+            buttonOK.setEnabled(True)
+        else:
+            buttonOK.setEnabled(False)
+
     def saveLayerIntoOgrPkg(self, layer, srcDataSource, layerName):
         try:
             output_layer = srcDataSource.CreateLayer(
@@ -342,7 +356,15 @@ class MappingEcosystemServices:
         self.dlg.formulaQBox.clear()
         self.dlg.formulaQBox.addItems(['Linear', 'Gaussian'])
         self.dlg.searchFolder.clear()
-
+        # connect check OK function
+        self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkOK)
+        self.dlg.studyAreaLayerQbox.activated.connect(self.checkOK)
+        self.dlg.landUseLayerQbox.activated.connect(self.checkOK)
+        self.dlg.landUseFieldQbox.activated.connect(self.checkOK)
+        self.dlg.searchFolder.textChanged.connect(self.checkOK)
+        self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkOK)
+        self.dlg.target.itemChanged.connect(self.checkOK)
+        self.dlg.source.itemChanged.connect(self.checkOK)
         ############## Load layers ######################
         # Fetch Study area
         layers = self.getLayers()
@@ -378,12 +400,14 @@ class MappingEcosystemServices:
 
         # self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
         self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
-
+        buttonOK = self.dlg.button_box.buttons()[0]
+        buttonOK.setEnabled(False)
         #####################################
         # current timestamp usefull for output files
         self.timestamp = str(datetime.now().strftime("%d%m%Y_%H%M%S"))
         # Run the dialog event loop
         result = self.dlg.exec_()
+        self.checkOK()
         ################## A progress bar ###################
         # progress = QProgressBar()
         # progress.setMaximum(100)
