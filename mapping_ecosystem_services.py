@@ -193,6 +193,7 @@ class MappingEcosystemServices:
 
         for row in sorted(rows, reverse=True):
             self.dlg.source.removeRow(row)
+        self.checkOK()
 
     def targetButtonDelete(self):
         rows = set()
@@ -201,6 +202,7 @@ class MappingEcosystemServices:
 
         for row in sorted(rows, reverse=True):
             self.dlg.target.removeRow(row)
+        self.checkOK()
 
     def sourceRowsAdded(self, a, b, c):
         return
