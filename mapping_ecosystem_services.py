@@ -276,12 +276,15 @@ class MappingEcosystemServices:
         items = []
         values = []
         for row in range(self.dlg.source.rowCount()):
-            item = self.dlg.source.item(row, 0)
-            value = self.dlg.source.item(row, 1)
-            text = str(item.text())
-            items.append(text)
-            number = float(value.text().replace(',', '.'))
-            values.append(number)
+            try:
+                item = self.dlg.source.item(row, 0)
+                value = self.dlg.source.item(row, 1)
+                text = str(item.text())
+                items.append(text)
+                number = float(value.text().replace(',', '.'))
+                values.append(number)
+            except:
+                pass
         return {"items": items, "values": values}
 
     def helpAction(self):
@@ -313,7 +316,6 @@ class MappingEcosystemServices:
         if self.dlg.maxDistanceSpinBox.value() != '' and\
                 self.dlg.studyAreaLayerQbox.currentText() != '' and\
                 self.dlg.landUseLayerQbox.currentText() != '' and\
-                self.dlg.landUseFieldQbox.currentText() != '' and\
                 self.dlg.searchFolder.displayText() != '' and\
                 self.dlg.outputRasterSizeBox.value() != ''and\
                 self.dlg.target.rowCount() != 0 and \
@@ -321,6 +323,24 @@ class MappingEcosystemServices:
             buttonOK.setEnabled(True)
         else:
             buttonOK.setEnabled(False)
+
+    def checkSourceValue(self, item):
+        row = item.row()
+        print(row)
+        newItem = self.dlg.source.rowCount()
+        print(self.dlg.source.item(0, 1))
+        return
+        try:
+            sourceValue = float(value.text().replace(',', '.'))
+        except:
+            sourceValue = None
+            item.setText('0.0')
+        if isinstance(sourceValue, float):
+            self.checkOK()
+        else:
+            item.setText('0.0')
+            self.checkOK()
+            # self.dlg.button_box.buttons()[0].setEnabled(False)
 
     def checkCRS(self):
         try:
@@ -339,6 +359,7 @@ class MappingEcosystemServices:
                 if landUseLayerCRSID == studyAreaLayerCRSID:
                     self.checkOK()
                 else:
+                    self.dlg.button_box.buttons()[0].setEnabled(False)
                     self.log('Study area and land use have different CRS.')
                     QMessageBox.information(
                         None, "Warning!", "Study area and land use have different CRS.")
@@ -377,6 +398,14 @@ class MappingEcosystemServices:
                 self.sourceButtonDelete)
             self.dlg.targetDeleteButton.clicked.connect(
                 self.targetButtonDelete)
+            self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkCRS)
+            self.dlg.studyAreaLayerQbox.activated.connect(self.checkCRS)
+            self.dlg.landUseLayerQbox.activated.connect(self.checkCRS)
+            # self.dlg.landUseFieldQbox.activated.connect(self.checkCRS)
+            self.dlg.searchFolder.textChanged.connect(self.checkCRS)
+            self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkCRS)
+            self.dlg.target.itemChanged.connect(self.checkCRS)
+            self.dlg.source.itemChanged.connect(self.checkCRS)
 
         # show the dialog
         self.dlg.show()
@@ -384,14 +413,7 @@ class MappingEcosystemServices:
         self.dlg.formulaQBox.addItems(['Linear', 'Gaussian'])
         # self.dlg.searchFolder.clear()
         # connect check OK function
-        self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkOK)
-        self.dlg.studyAreaLayerQbox.activated.connect(self.checkCRS)
-        self.dlg.landUseLayerQbox.activated.connect(self.checkCRS)
-        self.dlg.landUseFieldQbox.activated.connect(self.checkOK)
-        self.dlg.searchFolder.textChanged.connect(self.checkOK)
-        self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkOK)
-        self.dlg.target.itemChanged.connect(self.checkOK)
-        self.dlg.source.itemChanged.connect(self.checkOK)
+
         ############## Load layers ######################
         # Fetch Study area
         layers = self.getLayers()
@@ -403,7 +425,6 @@ class MappingEcosystemServices:
         self.dlg.studyAreaLayerQbox.addItem('')
         self.dlg.studyAreaLayerQbox.addItems(
             [layer.name() for layer in layers])
-
         # Fetch Land Use
         self.dlg.landUseLayerQbox.clear()
         self.dlg.landUseFieldQbox.clear()
