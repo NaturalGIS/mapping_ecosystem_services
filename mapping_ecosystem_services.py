@@ -205,7 +205,6 @@ class MappingEcosystemServices:
         self.checkOK()
 
     def sourceRowsAdded(self, a, b, c):
-        return
         print(self)
         print(a)
         print(b)
@@ -326,20 +325,20 @@ class MappingEcosystemServices:
 
     def checkSourceValue(self, item):
         row = item.row()
-        print(row)
-        newItem = self.dlg.source.rowCount()
-        print(self.dlg.source.item(0, 1))
-        return
+        valueItem = self.dlg.source.item(row, 1)
+        if valueItem is None:
+            self.dlg.source.setItem(row, 1, QTableWidgetItem('0.0'))
+            return
         try:
-            sourceValue = float(value.text().replace(',', '.'))
+            sourceValue = float(valueItem.text().replace(',', '.'))
         except:
             sourceValue = None
-            item.setText('0.0')
+            self.dlg.source.setItem(row, 1, QTableWidgetItem('0.0'))
         if isinstance(sourceValue, float):
-            self.checkOK()
+            self.checkCRS()
         else:
-            item.setText('0.0')
-            self.checkOK()
+            self.dlg.source.setItem(row, 1, QTableWidgetItem('0.0'))
+            self.checkCRS()
             # self.dlg.button_box.buttons()[0].setEnabled(False)
 
     def checkCRS(self):
@@ -424,7 +423,7 @@ class MappingEcosystemServices:
             self.dlg.searchFolder.textChanged.connect(self.checkCRS)
             self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkCRS)
             self.dlg.target.itemChanged.connect(self.checkCRS)
-            self.dlg.source.itemChanged.connect(self.checkCRS)
+            self.dlg.source.itemChanged.connect(self.checkSourceValue)
 
         # show the dialog
         self.dlg.show()
@@ -463,7 +462,7 @@ class MappingEcosystemServices:
         ##############################
         self.dlg.source.setColumnCount(2)
         self.dlg.source.setHorizontalHeaderLabels(['Land use', 'Value'])
-        self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
+        # self.dlg.source.model().rowsAboutToBeInserted.connect(self.sourceRowsAdded)
         buttonOK = self.dlg.button_box.buttons()[0]
         buttonOK.setEnabled(False)
         #####################################
