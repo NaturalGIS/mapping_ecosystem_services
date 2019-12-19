@@ -348,6 +348,25 @@ class MappingEcosystemServices:
             landUseLayer = self.getSelectedLandUseLayer()
             if landUseLayer.crs().isGeographic() or studyAreaLayer.crs().isGeographic():
                 self.dlg.button_box.buttons()[0].setEnabled(False)
+                return
+            try:
+                landUseLayerCRSID = landUseLayer.crs().toWkt()
+                studyAreaLayerCRSID = studyAreaLayer.crs().toWkt()
+                if landUseLayerCRSID == studyAreaLayerCRSID:
+                    self.checkOK()
+                else:
+                    self.dlg.button_box.buttons()[0].setEnabled(False)
+            except:
+                return
+        except:
+            return
+
+    def checkCRSWarning(self):
+        try:
+            studyAreaLayer = self.getSelectedStudyAreaLayer()
+            landUseLayer = self.getSelectedLandUseLayer()
+            if landUseLayer.crs().isGeographic() or studyAreaLayer.crs().isGeographic():
+                self.dlg.button_box.buttons()[0].setEnabled(False)
                 self.log(
                     'Geographic CRSs are not allowed. Please change to projected.')
                 QMessageBox.information(
@@ -399,8 +418,8 @@ class MappingEcosystemServices:
             self.dlg.targetDeleteButton.clicked.connect(
                 self.targetButtonDelete)
             self.dlg.maxDistanceSpinBox.valueChanged.connect(self.checkCRS)
-            self.dlg.studyAreaLayerQbox.activated.connect(self.checkCRS)
-            self.dlg.landUseLayerQbox.activated.connect(self.checkCRS)
+            self.dlg.studyAreaLayerQbox.activated.connect(self.checkCRSWarning)
+            self.dlg.landUseLayerQbox.activated.connect(self.checkCRSWarning)
             # self.dlg.landUseFieldQbox.activated.connect(self.checkCRS)
             self.dlg.searchFolder.textChanged.connect(self.checkCRS)
             self.dlg.outputRasterSizeBox.valueChanged.connect(self.checkCRS)
