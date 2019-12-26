@@ -150,17 +150,19 @@ The script also allows to create a database and a database user that can be used
 
 The input data must be prepared in a very precise way. This can be easily done within Desktop GIS applications like QGIS. The scripts where tested using [GPKGs datasources](https://www.geopackage.org/) but is possible that other multi-layered datasources (i.e. Spatialite, ESRI file geodatabase, etc.) can work.
 
-The input layers must exist within a **single** Geopackage (GPKG) file (this file can be named in any way) that must contains two layers:
+The input layers must exist within a **single** Geopackage (GPKG) datasource (this file can be named in any way):
 
-- a POLYGON layer representing the area/s map. This layer **MUST** be named "**study_area**". The attributes for this layer are not important.
+- a (MULTI)POLYGON layer representing the study/analysis area. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**study_area**". The attributes for this layer are not important.
 
-- a POLYGON layer representing land use map. This layer **MUST** be named "**land_use**". This layer **MUST** have a few **mandatory** columns, that **MUST** be named and filled in a very specific way:
+- a (MULTI)POLYGON layer representing land use map. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**land_use**". 
 
-    - a column name **class** (can be text or numeric): this must contain the land use classification
+The land use map **MUST** have a few **mandatory** attributes/columns
+
+    - a column (can be text or numeric) that will hold the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **class**
+    
+    - a column (can be inetger or decimal) that will hold the value associated with the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **value**
 
     - a column named **type** (text): this must contain the words "**target**" or "**source**" associated with the parcels that are    meant to be used as "target" and "source" in the analysis
-
-    - a column named **value** (numeric): this must contain the numeric value (integer or decimal) associated to the "source" patches
 
 #### Usage
 
@@ -198,7 +200,7 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
 
 Recent versions of MS Windows 10 have the hability to run natively GNU/Linux programs/scripts using the
 [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)
-, for this reason a MS Windows specifiv version of the scripts will not be created, instead just use the WSfL, see:
+, for this reason a MS Windows specific version of the scripts will not be created, instead just use the WSL and the GNU/Linux version of the scripts, see:
 
 https://docs.microsoft.com/en-us/windows/wsl/install-win10
 
