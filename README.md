@@ -148,7 +148,7 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
 
     - a column named **value** (numeric): this must contain the numeric value (integer or decimal) associated to the "source" patches
 
-#### For GNU/Linux
+### For GNU/Linux
 
 **init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate Linux distribution) machine: PostgreSQL/PostGIS and gdal-bin. This scripts also allows to create a database and a database user that can be used for the analysis of the data. It is not required to tun this script if the computer being used has already a PostgreSQL/PostGIS installation and given that a database/database user (with write permissions) are already created and available to be used.
 
@@ -156,7 +156,7 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
 
 **analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to batch process a folder with >1 Geopckage (GPKG) dataources in it.
 
-### Usage
+#### Usage
 
 - Step1: After downloading the scripts make them executable
 
@@ -188,9 +188,17 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
 
     TO-DO
 
-#### For MS Windows
+### For MS Windows
 
-#### macOS
+Recent versions of MS Windows 10 have the hability to run natively GNU/Linux programs/scripts using the
+[Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)
+, for this reason a MS Windows specifiv version of the scripts will not be created, instead just use the WSfL, see:
+
+https://docs.microsoft.com/en-us/windows/wsl/install-win10
+
+https://docs.microsoft.com/en-us/windows/wsl/initialize-distro
+
+### macOS
 
 A macOS version of the scripts is under consideration.
 
