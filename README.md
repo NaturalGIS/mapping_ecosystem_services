@@ -130,11 +130,25 @@ while ***Gaussian*** uses the following:
 
 ### Description
 
-The scripts are found here: https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_script and are distributed along with the QGIS plugin (but they can be downloaded and used in a completely independet way).
+The scripts are found here https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_script and are distributed along with the QGIS plugin but they can be downloaded and used in a completely independet way.
+
+### For GNU/Linux
+
+**init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate GNU/Linux distribution) machine: 
+
+* PostgreSQL/PostGIS
+
+* gdal-bin
+
+The script also allows to create a database and a database user that can be used for the analysis of the data. Running this script is not mandatory if the computer being used has already a PostgreSQL/PostGIS installation and a database/database user (with write permissions) are already available to be used.
+
+**analyize_data_linux.sh**: this the script used to analyze one specific set of input data. The results are outputted as layers/tables inside the database and also as a Geopackage (GPKG) datasource.
+
+**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to process automatically multiple sets of iput data, typically a folder with > 1 Geopckage (GPKG) dataource in it.
 
 ### Data preparation
 
-The input data must be prepared in a very precise way. This can be easily done within Desktop GIS applications like QGIS.
+The input data must be prepared in a very precise way. This can be easily done within Desktop GIS applications like QGIS. The scripts where tested using [GPKGs datasources](https://www.geopackage.org/) but is possible that other multi-layered datasources (i.e. Spatialite, ESRI file geodatabase, etc.) can work.
 
 The input layers must exist within a **single** Geopackage (GPKG) file (this file can be named in any way) that must contains two layers:
 
@@ -147,14 +161,6 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
     - a column named **type** (text): this must contain the words "**target**" or "**source**" associated with the parcels that are    meant to be used as "target" and "source" in the analysis
 
     - a column named **value** (numeric): this must contain the numeric value (integer or decimal) associated to the "source" patches
-
-### For GNU/Linux
-
-**init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate Linux distribution) machine: PostgreSQL/PostGIS and gdal-bin. This scripts also allows to create a database and a database user that can be used for the analysis of the data. It is not required to tun this script if the computer being used has already a PostgreSQL/PostGIS installation and given that a database/database user (with write permissions) are already created and available to be used.
-
-**analyize_data_linux.sh**: this the script used to analyze the data. It guides the user to a series of interactive questions (connection parameters to the database, analysis parameters, location of the input datasource, etc.) then it runs the analysis. The results are outputted as layers/tables inside the database and also as a Geopackage (GPKG) datasource.
-
-**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to batch process a folder with >1 Geopckage (GPKG) dataources in it.
 
 #### Usage
 
