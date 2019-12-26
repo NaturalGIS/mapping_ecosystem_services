@@ -5,7 +5,7 @@ while true; do
         y) break;;
         n) break;;
         q ) echo "Quitting the program"; exit;;
-        * ) echo "Please choose 'y' or 'n' ('q' to quit)";;
+        * ) echo "Please choose y or n ('q' to quit)";;
     esac
 done
 
@@ -17,16 +17,19 @@ then
 fi
 
 read -p "PostgreSQL/PostGIS database name (default=land): "  dbname
-read -p "PostgreSQL/PostGIS username (default=land): " username
 
 if [ -z "$dbname" ]
 then
-      dbname="land"
+      echo "Database name not provided, exiting" && exit
+      #dbname="land"
 fi
+
+read -p "PostgreSQL/PostGIS username (default=land): " username
 
 if [ -z "$username" ]
 then
-      username="land"
+      echo "Database username not provided, exiting" && exit
+      #username="land"
 fi
 
 cd /tmp
