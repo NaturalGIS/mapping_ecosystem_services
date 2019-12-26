@@ -150,19 +150,22 @@ The script also allows to create a database and a database user that can be used
 
 The input data must be prepared in a very precise way. This can be easily done within Desktop GIS applications like QGIS. The scripts where tested using [GPKGs datasources](https://www.geopackage.org/) but is possible that other multi-layered datasources (i.e. Spatialite, ESRI file geodatabase, etc.) can work.
 
-The input layers must exist within a **single** Geopackage (GPKG) datasource (this file can be named in any way):
+The input map/layers must exist within a **single** Geopackage (GPKG) datasource (this file can be named in any way):
 
-- a (MULTI)POLYGON layer representing the study/analysis area. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**study_area**". The attributes for this layer are not important.
+- a (MULTI)POLYGON map/layer representing the study/analysis area. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**study_area**". The attributes for this layer are not important.
 
-- a (MULTI)POLYGON layer representing land use map. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**land_use**". 
+- a (MULTI)POLYGON map/layer representing the land use. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**land_use**". 
 
-The land use map **MUST** have a few **mandatory** attributes/columns
+The land use map/layer **MUST** have a few **mandatory** attributes/columns
 
-    - a column (can be text or numeric) that will hold the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **class**
+- a column (can be text or numeric) that will hold the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **class**
     
-    - a column (can be inetger or decimal) that will hold the value associated with the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **value**
+- a column (can be inetger or decimal) that will hold the value associated with the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **value**
 
-    - a column named **type** (text): this must contain the words "**target**" or "**source**" associated with the parcels that are    meant to be used as "target" and "source" in the analysis
+- a column that must be named **type** (must be text): this column must contain the words "**target**" or "**source**" associated with the parcels that are meant to be used as "target" and "source" in the analysis
+
+<img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/data_example.png" width="600">
+
 
 #### Usage
 
