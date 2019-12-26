@@ -48,13 +48,13 @@ None of the patches with classes 3.1/3.2 contributes in value to the patches wit
 
 ## Requirements and considerations
 
-The **QGIS plugin** needs QGIS >= 3.4 to work. It is written in Python and does not need any particular library other than the ones installed by default by any QGIS installer. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
+The **QGIS plugin** needs QGIS >= 3.4 to work, it is written in Python and does not need any particular Python library other than the ones installed by default with any QGIS installation. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
 
-The **scripts** are meant to run from within a GNU/Linux terminal. They were developed and tested on Ubuntu 18.04 so any other Linux distribution based on Ubuntu 18.04 is likely to work but they can be easily modified to work on any other Linux distribution. A MS Windows version of the scripts is likely to be added in the next future while a macOS version is unlikely to happen. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS (with the [PostGIS](https://postgis.net/) spatial extension) and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported (support for remote connections can be easily added if needed). This scripts take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS.
+The **scripts** are meant to be run in a GNU/Linux (Bash) terminal. They were developed/written and tested on Ubuntu 18.04 so any other Linux distribution derived from it will work. If needed they can be easily modified to work on any other GNU/Linux distribution. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS, its [PostGIS](https://postgis.net/) spatial extension and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported: support for remote connections can be easily added if needed, but it probably means some kind of security isse. This scripts take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS.
 
 Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem they are tasked to. 
 
-The scripts are faster than the QGIS plugin so, to analyze large amount of data, consider using them. Moreover one of the scripts was created to be run as a batch process that allows to analyze automatically several different input datasets.
+The scripts are faster than the QGIS plugin so to analyze large amount of data is sugegsted to use them instead of the QGIS plugin. One of the scripts was created to allow automatically batches of input data sources.
 
 ## QGIS plugin: data preparation
 
@@ -64,13 +64,13 @@ The scripts are faster than the QGIS plugin so, to analyze large amount of data,
 
     b) one representing a land use map
 
-2) This two layers **must** have the same CRS (coordinate reference system) and the CRS **must** be a projected one (geographic CRSs are not supported).
+2) This two layers **must** have the same CRS (coordinate reference system) and the CRS **must** be a projected one (geographic CRSs, with degrees as units, are not supported).
 
 3) Input layers features/geometries **must** be free of geometry errors, if in doubt clean them with QGIS's "**fix geometries**" tool **before** using them in this plugin.
 
 4) The land use map/layers **must** have an attribute/column that represent the patches classification. This attribute can be numeric (integer or decimal) or text.
 
-5) As part of the computations the  plugin does a **distance analysis**, a type if GIS analysis that is known to be slow when large amount is being processed. Depending on the number of patches involved in the analysis the plugin can take quite a long time to compute the results so **please be patient**. The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
+5) As part of the computations the  plugin does a **distance analysis**, a type if GIS analysis that is known to be slow when large amount of data is being processed. Depending on the number of patches involved in the analysis the plugin can take quite a long time to compute the results so **please be patient** (in this cases consider using the scripts instead). The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
 
 ## QGIS plugin installation and usage
 
@@ -118,7 +118,7 @@ while ***Gaussian*** uses the following:
 
     b) a raster layer/map of the computed final results
    
-8) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map. The resolution must be high enough for the rasterization process be able to generate the clusters representing very small parcels.
+8) "**Output raster spatial resolution (CRS units)**": the spatial resolution (pixels size) of the raster output layer/map. The resolution must be high enough (small enough numeric value) for the rasterization process be able to generate the clusters representing very small parcels.
 
 9) "**Land use classes**": the list of (unique) land use classes automatically populated after choosing the **Land use classification attribute**.
 
@@ -130,13 +130,7 @@ while ***Gaussian*** uses the following:
 
 ### Description
 
-The scripts are found here: https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_scripts along with a Geopackage (GPKG) datasource containing sample data.
-
-**init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate Linux distribution) machine: PostgreSQL/PostGIS and gdal-bin. This scripts also allows to create a database and a database user that can be used for the analysis of the data. It is not required to tun this script if the computer being used has already a PostgreSQL/PostGIS installation and given that a database/database user (with write permissions) are already created and available to be used.
-
-**analyize_data_linux.sh**: this the script used to analyze the data. It guides the user to a series of interactive questions (connection parameters to the database, analysis parameters, location of the input datasource, etc.) then it runs the analysis. The results are outputted as layers/tables inside the database and also as a Geopackage (GPKG) datasource.
-
-**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to batch process a folder with >1 Geopckage (GPKG) dataources in it.
+The scripts are found here: https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_script and are distributed along with the QGIS plugin (but they can be downloaded and used in a completely independet way).
 
 ### Data preparation
 
@@ -153,7 +147,15 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
     - a column named **type** (text): this must contain the words "**target**" or "**source**" associated with the parcels that are    meant to be used as "target" and "source" in the analysis
 
     - a column named **value** (numeric): this must contain the numeric value (integer or decimal) associated to the "source" patches
-    
+
+#### For GNU/Linux
+
+**init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate Linux distribution) machine: PostgreSQL/PostGIS and gdal-bin. This scripts also allows to create a database and a database user that can be used for the analysis of the data. It is not required to tun this script if the computer being used has already a PostgreSQL/PostGIS installation and given that a database/database user (with write permissions) are already created and available to be used.
+
+**analyize_data_linux.sh**: this the script used to analyze the data. It guides the user to a series of interactive questions (connection parameters to the database, analysis parameters, location of the input datasource, etc.) then it runs the analysis. The results are outputted as layers/tables inside the database and also as a Geopackage (GPKG) datasource.
+
+**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to batch process a folder with >1 Geopckage (GPKG) dataources in it.
+
 ### Usage
 
 - Step1: After downloading the scripts make them executable
@@ -185,6 +187,12 @@ The input layers must exist within a **single** Geopackage (GPKG) file (this fil
 - Step3: run the analysis
 
     TO-DO
+
+#### For MS Windows
+
+#### macOS
+
+A macOS version of the scripts is under consideration.
 
 ## Sample data
 
