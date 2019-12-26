@@ -247,12 +247,44 @@ In the above image and example of a table of attributes for a "land use" input m
 
 - Step4 (optional): run the analysis, multiple datasource mode (**analyize_data_batch_linux.sh**). The general usage for this script is:
 
-```./analyize_data_batch_linux.sh [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
+    ```./analyize_data_batch_linux.sh [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
 
     Example:
 
-```./analyize_data_batch_linux.sh -d db_name -u db_username -p db_password -s test/ -m 3000 -f ga -t bo -r 50```
+    ```./analyize_data_batch_linux.sh -d db_name -u db_username -p db_password -s test/ -m 3000 -f ga -t bo -r 50```
+    
+    that would produce an output like:
+    
+    ```Starting Process for datasource sample_data2.gpkg!
+    Analysis Data and Time: 12/26/2019 18:49
+    Analysis name: sample_data2_ga_bo_22000_12_26_2019_18_49
+    Importing study area map...
+    Importing land use map...
+    Processing the data within the database...
+    Exporting the results in Geopackage format...
+    Analysis finished for sample_data2.gpkg
+    Results saved in /home/land_analysis/test/sample_data2_ga_bo_22000_12_26_2019_18_49.gpkg
 
+    Starting Process for datasource sample_data3.gpkg!
+    Analysis Data and Time: 12/26/2019 18:49
+    Analysis name: sample_data3_ga_bo_22000_12_26_2019_18_49
+    The column 'value' has a wrong datatype, must be DECIMAL or INTEGER
+    Skipping /home/land_analysis/test/sample_data3.gpkg
+
+    Starting Process for datasource sample_data.gpkg!
+    Analysis Data and Time: 12/26/2019 18:49
+    Analysis name: sample_data_ga_bo_22000_12_26_2019_18_49
+    Importing study area map...
+    Importing land use map...
+    Processing the data within the database...
+    Exporting the results in Geopackage format...
+    Analysis finished for sample_data.gpkg
+    Results saved in /home/land_analysis/test/sample_data_ga_bo_22000_12_26_2019_18_49.gpkg
+    ```
+    
+     Parameters explanation:
+
+     The parameters are the same as the "single mode" script, but there are a few missing ones as is expected for a few             variables to have specific values (see above).
 
 ### For MS Windows
 
