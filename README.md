@@ -166,6 +166,7 @@ The land use map/layer **MUST** have a few **mandatory** attributes/columns
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/data_example.png" width="600">
 
+In the above image and example of a table of attributes for a "land use" input map/layer, with patches belonging to the "source" type (together with their associated values", patches belonging to the "target" type and parcels that will not enter the analysis.
 
 #### Usage
 
@@ -183,17 +184,17 @@ The land use map/layer **MUST** have a few **mandatory** attributes/columns
     
     - install updates for the operating system
     
-    - install PostgreSQL, PostGIS and gdal-bin
+    - install PostgreSQL, PostGIS and the gdal-bin package
     
-    - ask to choose a name for the database that is being created
+    - ask to choose a name for a database that will be created
     
     - ask to choose a (database) username that will be the owner of the database created in the previous step
     
-    - ask to choose a password for the database user
+    - ask to choose a password for the database user created in the previous step
     
-    - add the PostGIS extension to the database that is being created
+    - add the PostGIS extension to the database that was created previously
     
-    - set the proper permissions on the "geometry_columns" table
+    - set the proper permissions on the "geometry_columns" table within the database that was created previously
 
 - Step3: run the analysis
 
