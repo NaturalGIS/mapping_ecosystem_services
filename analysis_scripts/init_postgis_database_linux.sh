@@ -5,7 +5,7 @@ while true; do
         y) break;;
         n) break;;
         q ) echo "Quitting the program"; exit;;
-        * ) echo "Please choose Y or N ('q' to quit)";;
+        * ) echo "Please choose 'y' or 'n' ('q' to quit)";;
     esac
 done
 
