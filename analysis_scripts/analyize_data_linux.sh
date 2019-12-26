@@ -59,7 +59,7 @@ while getopts ":d:u:p:s:a:l:v:c:m:f:t:r:" opt; do
 done
 
 ##CHECK IF ALL PARAMETERS ARE SET
-if [ ! "$dbname" ] || [ ! "$username" ] || [ ! "$password" ] || [ ! "$datasource" ] || [ ! "$study_area_layer" ] || [ ! "$land_use_layer" ] || [ ! "$land_use_value" ] || [ ! "$land_use_class" ] || [ ! "$distance" ] || [ ! "$formula" ] || [ ! "type" ] || [ ! "$resolution" ]
+if [ ! "$dbname" ] || [ ! "$username" ] || [ ! "$password" ] || [ ! "$datasource" ] || [ ! "$study_area_layer" ] || [ ! "$land_use_layer" ] || [ ! "$land_use_value" ] || [ ! "$land_use_class" ] || [ ! "$distance" ] || [ ! "$formula" ] || [ ! "$type" ] || [ ! "$resolution" ]
 then
     echo "Missing mandatory parameter"
     echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
@@ -141,13 +141,13 @@ then
       echo "The study area and land use CRSs do not match" && exit
 fi
 
-check_class_col="$(ogrinfo -so $datasource $land_use_layer | grep $land_use_class)"
+check_class_col="$(ogrinfo -so $datasource $land_use_layer | grep -w "$land_use_class")"
 if [ -z "$check_class_col" ]
 then
       echo "A column called '$land_use_class' is not present in the layer called '$land_use_layer'" && exit
 fi
 
-check_value_col="$(ogrinfo -so $datasource $land_use_layer | grep $land_use_value)"
+check_value_col="$(ogrinfo -so $datasource $land_use_layer | grep -w "$land_use_value")"
 if [ -z "$check_value_col" ]
 then
       echo "A column called '$land_use_value' is not present in the layer called '$land_use_layer'" && exit
@@ -176,7 +176,10 @@ schemaname=$noext"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
 ##CREATE THE SCHEMA FOR THE RESULTS
 check_schema=$(PGPASSWORD=land6 psql -q -U land6 -d land6 -h localhost -c "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$schemaname';")
 if [[ $check_schema == *"1 row"* ]]; then
-  echo "Database schema name already exists, wait at least 1 minute before running the analysis" && exit
+  ##echo "Database schema name already exists, wait at least 1 minute before running the analysis" && exit
+  sleep 1m
+  schemaname=$noext"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
+  PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE SCHEMA $schemaname;"
 else
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE SCHEMA $schemaname;"
 fi
@@ -189,9 +192,9 @@ echo ""
 
 #IMPORT THE STUDY AREA AND LAND USE LAYERS
 echo "Importing study area map..."
-ogr2ogr -q -progress -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource $study_area_layer
 echo "Importing land use map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON $datasource land_use
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON $datasource $land_use_layer
 
 echo -e "Processing the data within the database..."
 ##CREATE THE SOURCE PARCELS LAYER
