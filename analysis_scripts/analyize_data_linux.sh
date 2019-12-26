@@ -2,7 +2,7 @@
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-while getopts ":d:u:p:s:a:l:m:f:t:r:" opt; do
+while getopts ":d:u:p:s:a:l:v:c:m:f:t:r:" opt; do
   case ${opt} in
     d )
     dbname=$OPTARG
@@ -28,6 +28,14 @@ while getopts ":d:u:p:s:a:l:m:f:t:r:" opt; do
     land_use_layer=$OPTARG
     #echo $land_use_layer
       ;;
+    v )
+    land_use_value=$OPTARG
+    #echo $land_use_value
+      ;;
+    c )
+    land_use_class=$OPTARG
+    #echo $land_use_class
+      ;;      
     m )
     distance=$OPTARG
     #echo $distance
@@ -45,16 +53,16 @@ while getopts ":d:u:p:s:a:l:m:f:t:r:" opt; do
     #echo $resolution
       ;;
     \? ) echo "Wrong parameter"
-	 echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land user layer name] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
+	 echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
       ;;
   esac
 done
 
 ##CHECK IF ALL PARAMETERS ARE SET
-if [ ! "$dbname" ] || [ ! "$username" ] || [ ! "$password" ] || [ ! "$datasource" ] || [ ! "$study_area_layer" ] || [ ! "$land_use_layer" ] || [ ! "$distance" ] || [ ! "$formula" ] || [ ! "type" ] || [ ! "$resolution" ]
+if [ ! "$dbname" ] || [ ! "$username" ] || [ ! "$password" ] || [ ! "$datasource" ] || [ ! "$study_area_layer" ] || [ ! "$land_use_layer" ] || [ ! "$land_use_value" ] || [ ! "$land_use_class" ] || [ ! "$distance" ] || [ ! "$formula" ] || [ ! "type" ] || [ ! "$resolution" ]
 then
     echo "Missing mandatory parameter"
-    echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land user layer name] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
+    echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
 fi
 
 #CHECK IF ANALYSIS DISTANCE AND RASTER RESOLUTION ARE INTEGERS
@@ -87,6 +95,7 @@ noext="${nopath%.*}"
 fi
 
 ##CHECK IF THE PROVIDED DATASOURCE CONTAINS THE INPUT LAYERS AND IF THEY ARE THE PROPER TYPE AND HAVE THE PROPER CRS
+##AND IF THE CLASS/VALUES COLUMNS EXIST AND ARE THE PROPER TYPE
 check_sa="$(ogrinfo -so $datasource $study_area_layer | grep $study_area_layer)"
 if [ "$check_sa" == "FAILURE: Couldn't fetch requested layer $study_area_layer!" ]
 then
@@ -132,6 +141,22 @@ then
       echo "The study area and land use CRSs do not match" && exit
 fi
 
+check_class_col="$(ogrinfo -so $datasource $land_use_layer | grep $land_use_class)"
+if [ -z "$check_class_col" ]
+then
+      echo "A column called '$land_use_class' is not present in the layer called '$land_use_layer'" && exit
+fi
+
+check_value_col="$(ogrinfo -so $datasource $land_use_layer | grep $land_use_value)"
+if [ -z "$check_value_col" ]
+then
+      echo "A column called '$land_use_value' is not present in the layer called '$land_use_layer'" && exit
+fi
+if [[ $check_value_col == *"String"* ]] || [[ $check_value_col == *"Date"* ]]
+then
+      echo "The column '$land_use_value' has a wrong datatype, must be DECIMAL or INTEGER" && exit
+fi
+
 ##CHECK IF IS POSSIBLE TO ESTABLISH A CONNECTION TO THE DATABASE AND IF IT HAS POSTGIS IN IT
 message=$(PGPASSWORD=$password psql -h localhost -d $dbname -U $username -c "SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';" 2>&1 >/dev/null)
 
@@ -144,10 +169,6 @@ message=$(PGPASSWORD=$password psql -h localhost -d $dbname -U $username -c "SEL
 if [[ $message != *"spatial_ref_sys"* ]]; then
   echo "The chosen PostgreSQL database does not have the PostGIS extension installed" && exit
 fi
-
-##nopath=$(basename -- "$datasource")
-##path=$(dirname "${datasource}")
-##noext="${nopath%.*}"
 
 ##SET THE NAME FOR A SCHEMA IN THE DATABASE THAT WILL HOLD THE INPUT DATA AND THE RESULTS
 schemaname=$noext"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
@@ -199,10 +220,10 @@ fi
 ##SET THE FORUMLAS
 if [ $formula = "li" ]
 then
-query='CASE WHEN ST_Distance(target_parcels.'"$geom"', source_parcels.'"$geom"')=0 THEN source_parcels.value ELSE (1-(ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"'))*source_parcels.value END AS value_target, '
+query='CASE WHEN ST_Distance(target_parcels.'"$geom"', source_parcels.'"$geom"')=0 THEN source_parcels.'"$land_use_value"' ELSE (1-(ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"'))*source_parcels.'"$land_use_value"' END AS value_target, '
 elif [ $formula = "ga" ]
 then
-query='source_parcels.value*((2.718281828459045235360287471352662497757247093699959574966^(((ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"')*(ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"')*-4)+0.92))/sqrt(6.283185307179586476925286766559005768394338798750211641949)) AS value_target, '
+query='source_parcels.'"$land_use_value"'*((2.718281828459045235360287471352662497757247093699959574966^(((ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"')*(ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"')*-4)+0.92))/sqrt(6.283185307179586476925286766559005768394338798750211641949)) AS value_target, '
 fi
 
 ##RUN THE ANALYSIS
@@ -211,9 +232,9 @@ CREATE TABLE $schemaname.raw_data AS \
 SELECT \
    row_number() OVER () AS gid, \
    source_parcels.gid AS id_source, \
-   source_parcels.class AS class_source, \
+   source_parcels.$land_use_class AS class_source, \
    target_parcels.gid AS id_target, \
-   target_parcels.class AS class_target, \
+   target_parcels.$land_use_class AS class_target, \
    $query
    ST_Distance(target_parcels.$geom, source_parcels.$geom) AS distance, \
    ST_ShortestLine(target_parcels.$geom, source_parcels.$geom) AS geom, \
