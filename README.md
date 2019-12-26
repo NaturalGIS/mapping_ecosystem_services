@@ -192,13 +192,57 @@ In the above image and example of a table of attributes for a "land use" input m
     
     - ask to choose a password for the database user created in the previous step
     
-    - add the PostGIS extension to the database that was created previously
+    - add the PostGIS extension to the database created in the previous steps
     
-    - set the proper permissions on the "geometry_columns" table within the database that was created previously
+    - set the proper permissions on the "geometry_columns" table within the database created in the previous steps
 
-- Step3: run the analysis
+- Step3: run the analysis, single datasource mode (**analyize_data_linux.sh**:). The general usage for this script is:
 
-    TO-DO
+    ```./analyize_data_linux.sh [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
+    
+Example:
+
+```./analyize_data_linux.sh -d db_name -u db_username -p db_password -s test/sample_data.gpkg -a study_area -l land_use -v value -c class -m 10000 -f ga -t bo -r 10```
+
+that would produce an output like:
+
+```Starting Process!
+Analysis Data and Time: 12/26/2019 18:29
+Analysis name: sample_data_ga_bo_22001_12_26_2019_18_29
+
+Importing study area map...
+Importing land use map...
+Processing the data within the database...
+Exporting the results in Geopackage format...
+
+Analysis finished
+Results saved in /home/land_analysis/test/sample_data_ga_bo_22001_12_26_2019_18_29.gpkg
+```
+
+Parameters explanation:
+-d db_name > name of the database to be used to run the analysis and store the results
+
+-u db_username > database username, must be owner of the database chosen with the "-d" parameter
+
+-p db_password > password of the database user
+
+-s test/sample_data.gpkg > path (absolute or relative) that points to the datasource with the input layers
+
+-a study_area > name of the "study area" map/layer
+
+-l land_use > name of the "land use" map/layer
+
+-v value > name of the column in the "land use" map/layer that holds the values for the "source" patches
+
+-c class > name of the column in the "land use" map/layer that holds the classificstion of the patches
+
+-m 10000 > analysis max distance (in meters)
+
+-f ga > formula to be used, can be "ga" (gaussian) or "li" (linear)
+
+-t bo > type pf the analysis, can be "bo" (boundaries) or "bb" (bounding boxes"
+
+-r 10 > resolution (in meters) of the raster output
 
 ### For MS Windows
 
