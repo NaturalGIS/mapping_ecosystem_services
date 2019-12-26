@@ -196,7 +196,7 @@ In the above image and example of a table of attributes for a "land use" input m
     
     - set the proper permissions on the "geometry_columns" table within the database created in the previous steps
 
-- Step3: run the analysis, single datasource mode (**analyize_data_linux.sh**:). The general usage for this script is:
+- Step3: run the analysis, single datasource mode (**analyize_data_linux.sh**). The general usage for this script is:
 
     ```./analyize_data_linux.sh [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
     
@@ -244,6 +244,15 @@ In the above image and example of a table of attributes for a "land use" input m
     **-t bo** > type pf the analysis, can be "bo" (boundaries) or "bb" (bounding boxes"
 
     **-r 10** > resolution (in meters) of the raster output
+
+- Step4 (optional): run the analysis, multiple datasource mode (**analyize_data_batch_linux.sh**). The general usage for this script is:
+
+```./analyize_data_batch_linux.sh [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
+
+    Example:
+
+```./analyize_data_batch_linux.sh -d db_name -u db_username -p db_password -s test/ -m 3000 -f ga -t bo -r 50```
+
 
 ### For MS Windows
 
