@@ -74,9 +74,6 @@ else
 nopath=$(basename -- "$datasource")
 path=$(dirname "${datasource}")
 fullpath=$(readlink -f $datasource)
-#echo $nopath
-#echo $path
-#echo $fullpath
 fi
 
 ##CHECK IF IS POSSIBLE TO ESTABLISH A CONNECTION TO THE DATABASE AND IF IT HAS POSTGIS IN IT
@@ -99,17 +96,12 @@ nopath_ds=$(basename -- "$datasource")
 path_ds=$(dirname "$datasource")
 noext_ds="${nopath_ds%.*}"
 fullpath_ds=$(readlink -f $datasource)
-#echo $datasource
-#echo $nopath_ds
-#echo $path_ds
-#echo $noext_ds
-#echo $fullpath_ds
 
 ##SET THE NAME FOR A SCHEMA IN THE DATABASE THAT WILL HOLD THE INPUT DATA AND THE RESULTS
 schemaname=$noext_ds"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
 
 ##CREATE THE SCHEMA FOR THE RESULTS
-check_schema=$(PGPASSWORD=land6 psql -q -U land6 -d land6 -h localhost -c "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$schemaname';")
+check_schema=$(PGPASSWORD=$password psql -q -U $username -d $dbname -h localhost -c "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$schemaname';")
 if [[ $check_schema == *"1 row"* ]]; then
   #echo "Database schema name already exists, wait at least 1 minute before running the analysis" && exit
   sleep 1m
@@ -207,6 +199,16 @@ then
       PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "DROP SCHEMA $schemaname;"
       continue        
 fi
+
+check_type_col="$(ogrinfo -so $datasource land_use | grep -w "type")"
+if [ -z "$check_type_col" ]
+then
+      echo "A column called 'type' is not present in the layer called 'land_use'"
+      echo "Skipping $datasource"
+      PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "DROP SCHEMA $schemaname;"
+      continue        
+fi
+
 if [[ $check_value_col == *"String"* ]] || [[ $check_value_col == *"Date"* ]]
 then
       echo "The column 'value' has a wrong datatype, must be DECIMAL or INTEGER"
@@ -215,26 +217,55 @@ then
       continue        
 fi
 
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT type FROM land_use' | grep -w 'type (String) = source')"
+if [ -z "$check_type_column_value" ]
+then
+      echo "In the column called 'type' there are no patches classified as 'source'"
+      echo "Skipping $datasource"
+      PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "DROP SCHEMA $schemaname;"
+      continue 
+fi
+
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT type FROM land_use' | grep -w 'type (String) = target')"
+if [ -z "$check_type_column_value" ]
+then
+      echo "In the column called 'type' there are no patches classified as 'target'"
+      echo "Skipping $datasource"
+      PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "DROP SCHEMA $schemaname;"
+      continue 
+fi
+
+crs="$(ogrinfo -so $datasource land_use | grep -w 'AUTHORITY' | tail -1 | grep -o -E '[0-9]+')"
+sa_extent="$(ogrinfo -so $datasource $study_area_layer| grep -w 'Extent:' | sed 's/) - (/ /g' | sed 's/,//g'| sed 's/(//g'| sed 's/)//g'| sed 's/Extent: //g')"
+
 #IMPORT THE STUDY AREA AND LAND USE LAYERS
 echo "Importing study area map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area
 echo "Importing land use map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON $datasource land_use
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON $datasource land_use
 
 echo -e "Processing the data within the database..."
-#CREATE THE SOURCE PARCELS LAYER
+#CREATE THE SOURCE PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
-CREATE TABLE $schemaname.source_parcels AS \
-SELECT a.*, ST_MakeValid(a.geom) AS geom_valid, ST_Envelope(a.geom) AS bbox \
+CREATE TABLE $schemaname.source_patches AS \
+SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
 FROM $schemaname.land_use a, $schemaname.study_area b \
 WHERE a.type = 'source' AND ST_Intersects(a.geom,b.geom) IS TRUE;"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.source_patches ADD PRIMARY KEY (gid);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_valid_idx ON $schemaname.source_patches USING gist (geom_valid);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_bbox_idx ON $schemaname.source_patches USING gist (bbox);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_idx ON $schemaname.source_patches USING gist (geom);"
 
-#CREATE THE TARGET PARCELS LAYER
+#CREATE THE TARGET PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
-CREATE TABLE $schemaname.target_parcels AS \
-SELECT a.*, ST_MakeValid(a.geom) AS geom_valid, ST_Envelope(a.geom) AS bbox \
+CREATE TABLE $schemaname.target_patches AS \
+SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
 FROM $schemaname.land_use a, $schemaname.study_area b \
 WHERE a.type = 'target' AND ST_Intersects(a.geom,b.geom) IS TRUE;"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.target_patches ADD PRIMARY KEY (gid);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_valid_idx ON $schemaname.target_patches USING gist (geom_valid);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_bbox_idx ON $schemaname.target_patches USING gist (bbox);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_idx ON $schemaname.target_patches USING gist (geom);"
 
 ##SET THE GEOMETRIES NAMES
 if [ $type = "bb" ]
@@ -248,10 +279,10 @@ fi
 #SET THE FORUMLAS
 if [ $formula = "li" ]
 then
-query='CASE WHEN ST_Distance(target_parcels.'"$geom"', source_parcels.'"$geom"')=0 THEN source_parcels.value ELSE (1-(ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"'))*source_parcels.value END AS value_target, '
+query='CASE WHEN ST_Distance(target_patches.'"$geom"', source_patches.'"$geom"')=0 THEN source_patches.value ELSE (1-(ST_Distance(target_patches.'"$geom"',source_patches.'"$geom"')/'"$distance"'))*source_patches.value END AS value_target, '
 elif [ $formula = "ga" ]
 then
-query='source_parcels.value*((2.718281828459045235360287471352662497757247093699959574966^(((ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"')*(ST_Distance(target_parcels.'"$geom"',source_parcels.'"$geom"')/'"$distance"')*-4)+0.92))/sqrt(6.283185307179586476925286766559005768394338798750211641949)) AS value_target, '
+query='source_patches.value*((2.718281828459045235360287471352662497757247093699959574966^(((ST_Distance(target_patches.'"$geom"',source_patches.'"$geom"')/'"$distance"')*(ST_Distance(target_patches.'"$geom"',source_patches.'"$geom"')/'"$distance"')*-4)+0.92))/sqrt(6.283185307179586476925286766559005768394338798750211641949)) AS value_target, '
 fi
 
 #RUN THE ANALYSIS   
@@ -259,24 +290,30 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.raw_data AS \
 SELECT \
    row_number() OVER () AS gid, \
-   source_parcels.gid AS id_source, \
-   source_parcels.class AS class_source, \
-   target_parcels.gid AS id_target, \
-   target_parcels.class AS class_target, \
+   source_patches.gid AS id_source, \
+   source_patches.class AS class_source, \
+   target_patches.gid AS id_target, \
+   target_patches.class AS class_target, \
    $query
-   ST_Distance(target_parcels.$geom, source_parcels.$geom) AS distance, \
-   ST_ShortestLine(target_parcels.$geom, source_parcels.$geom) AS geom, \
-   source_parcels.geom AS geom_source, target_parcels.geom AS geom_target, \
-   source_parcels.bbox AS bbox_source, target_parcels.bbox AS bbox_target \
+   ST_Distance(target_patches.$geom, source_patches.$geom) AS distance, \
+   ST_ShortestLine(target_patches.$geom, source_patches.$geom)::geometry('LINESTRING', $crs) AS geom, \
+   source_patches.geom AS geom_source, target_patches.geom AS geom_target, \
+   (source_patches.bbox)::geometry('MULTIPOLYGON', $crs) AS bbox_source, (target_patches.bbox)::geometry('MULTIPOLYGON', $crs) AS bbox_target \
  FROM \
    (SELECT DISTINCT ON (geom) * 
-    FROM $schemaname.source_parcels) AS source_parcels \
+    FROM $schemaname.source_patches) AS source_patches \
  CROSS JOIN LATERAL \
    (SELECT * \
-    FROM $schemaname.target_parcels \
-    ) AS target_parcels \
-    WHERE ST_Distance(target_parcels.$geom, source_parcels.$geom) < $distance \
+    FROM $schemaname.target_patches \
+    ) AS target_patches \
+    WHERE ST_Distance(target_patches.$geom, source_patches.$geom) < $distance \
          ORDER BY distance;"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.raw_data ADD PRIMARY KEY (gid);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX rd_geom_idx ON $schemaname.raw_data USING gist (geom);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX rd_geom_source_idx ON $schemaname.raw_data USING gist (geom_source);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX rd_geom_target_idx ON $schemaname.raw_data USING gist (geom_target);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX rd_bbox_source_idx ON $schemaname.raw_data USING gist (bbox_source);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX rd_bbox_target_idx ON $schemaname.raw_data USING gist (bbox_target);"
          
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
         CREATE TABLE $schemaname.results AS \
@@ -284,9 +321,11 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
         row_number() OVER () AS gid, \
         id_target, class_target, \
         sum(value_target) AS value, \
-        ST_Union(geom_target) AS geom FROM 
+        ST_Multi(ST_Union(geom_target))::geometry('MULTIPOLYGON', $crs) AS geom FROM 
         $schemaname.raw_data \
         GROUP BY id_target,class_target,geom_target;"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.results ADD PRIMARY KEY (gid);"     
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX re_geom_idx ON $schemaname.results USING gist (geom);"
 
 #RASTERIZE RESULTS        
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
@@ -294,6 +333,7 @@ CREATE TABLE $schemaname.result_raster AS
 select row_number() OVER () AS rid,
 ST_asRaster(geom, $resolution. , -$resolution. , '32BF', value, -9999)
 AS rast FROM $schemaname.results;"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.result_raster ADD PRIMARY KEY (rid);"
 
 ##EXPORT REUSULTS TO A GEOPACKAGE
 echo -e "Exporting the results in Geopackage format..."
