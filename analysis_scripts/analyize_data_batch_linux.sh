@@ -217,7 +217,7 @@ then
       continue        
 fi
 
-check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT type FROM land_use' | grep -w 'type (String) = source')"
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT type FROM land_use' | grep -w '(String) = source')"
 if [ -z "$check_type_column_value" ]
 then
       echo "In the column called 'type' there are no patches classified as 'source'"
@@ -226,7 +226,7 @@ then
       continue 
 fi
 
-check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT type FROM land_use' | grep -w 'type (String) = target')"
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT type FROM land_use' | grep -w '(String) = target')"
 if [ -z "$check_type_column_value" ]
 then
       echo "In the column called 'type' there are no patches classified as 'target'"
