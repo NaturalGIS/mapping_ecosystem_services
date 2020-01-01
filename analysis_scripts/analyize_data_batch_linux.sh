@@ -250,8 +250,8 @@ echo -e "Creating the 'source' and 'target' patches layers..."
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.source_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a, $schemaname.study_area b \
-WHERE a.type = 'source' AND ST_Intersects(a.geom,b.geom) IS TRUE;"
+FROM $schemaname.land_use a \
+WHERE a.type = 'source';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.source_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_valid_idx ON $schemaname.source_patches USING gist (geom_valid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_bbox_idx ON $schemaname.source_patches USING gist (bbox);"
@@ -261,8 +261,8 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE IND
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.target_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a, $schemaname.study_area b \
-WHERE a.type = 'target' AND ST_Intersects(a.geom,b.geom) IS TRUE;"
+FROM $schemaname.land_use a \
+WHERE a.type = 'target';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.target_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_valid_idx ON $schemaname.target_patches USING gist (geom_valid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_bbox_idx ON $schemaname.target_patches USING gist (bbox);"
