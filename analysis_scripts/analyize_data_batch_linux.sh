@@ -2,42 +2,34 @@
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-while getopts ":d:u:p:s:a:l:v:c:m:f:t:r:" opt; do
+while getopts ":d:u:p:s:a:l:v:c:m:f:t:r:g:" opt; do
   case ${opt} in
     d )
     dbname=$OPTARG
-    #echo $dbname
       ;;
     u )
     username=$OPTARG
-    #echo $username
       ;;
     p )
     password=$OPTARG
-    #echo $password
       ;;
     s )
     datasource=$OPTARG
-    #echo $datasource
       ;;     
     m )
     distance=$OPTARG
-    #echo $distance
       ;;
     f )
     formula=$OPTARG
-    #echo $formula
       ;;
     t )
     type=$OPTARG
-    #echo $type
       ;;
     r )
     resolution=$OPTARG
-    #echo $resolution
       ;;
     \? ) echo "Wrong parameter"
-	 echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution]"  && exit
+	 echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis] type [-r raster output spatial resolution] [-g generalization tolerance]"  && exit
       ;;
   esac
 done
@@ -46,13 +38,23 @@ done
 if [ ! "$dbname" ] || [ ! "$username" ] || [ ! "$password" ] || [ ! "$datasource" ] || [ ! "$distance" ] || [ ! "$formula" ] || [ ! "$type" ] || [ ! "$resolution" ]
 then
     echo "Missing mandatory parameter"
-    echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution]"  && exit
+    echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution] [-g generalization tolerance]"  && exit
 fi
 
-#CHECK IF ANALYSIS DISTANCE AND RASTER RESOLUTION ARE INTEGERS
+#CHECK IF ANALYSIS DISTANCE, RASTER RESOLUTION AND GENERALIZATION TOLERANCE ARE INTEGERS
 if ! [[ "$distance" =~ ^[0-9]+$ ]] || ! [[ "$resolution" =~ ^[0-9]+$ ]]
     then
         echo "Distance and resolution parameters can only be integer values" && exit
+fi
+
+if [[ -n "$generalization_tolerance" ]] && ! [[ "$generalization_tolerance" =~ ^[0-9]+$ ]]
+    then
+        echo "The generalization tolerance can only be an integer value" && exit
+fi
+
+if [[ -n "$generalization_tolerance" ]] && [[ "$type" != "ge" ]]
+    then
+        echo "Generalization tolerance provided but the analysis type does not match, so this value is ignored"
 fi
 
 #CHECK IF FORMULA AND TYPE PARAMETERS ARE AS EXPECTED
@@ -61,9 +63,14 @@ if ! [[ "$formula" == "li" ]] && ! [[ "$formula" == "ga" ]]
         echo "Accepted values for the 'formula' paramters are 'li' or 'ga'" && exit
 fi
 
-if ! [[ "$type" == "bo" ]] && ! [[ "$type" == "bb" ]]
+if ! [[ "$type" == "bo" ]] && ! [[ "$type" == "bb" ]] && ! [[ "$type" == "ge" ]]
     then
-        echo "Accepted values for the 'type' paramters are 'bo' or 'bb'" && exit
+        echo "Accepted values for the 'type' paramters are 'bo', 'bb' or 'ge'" && exit
+fi
+
+if [[ "$type" == "ge" ]] && [[ -z "$generalization_tolerance" ]]
+    then
+        echo "'generalization' chosen for the analysis, but tolerance not provided" && exit
 fi
 
 
@@ -257,6 +264,13 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE IND
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_bbox_idx ON $schemaname.source_patches USING gist (bbox);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_idx ON $schemaname.source_patches USING gist (geom);"
 
+if [[ "$type" == "ge" ]]
+    then
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.source_patches ADD COLUMN geom_generalized geometry(MULTIPOLYGON,$crs);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "UPDATE $schemaname.source_patches SET geom_generalized = ST_Multi(ST_SimplifyPreserveTopology(geom,$generalization_tolerance));"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_generalized_idx ON $schemaname.source_patches USING gist (geom_generalized);"
+fi
+
 #CREATE THE TARGET PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.target_patches AS \
@@ -268,6 +282,13 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE IND
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_bbox_idx ON $schemaname.target_patches USING gist (bbox);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_idx ON $schemaname.target_patches USING gist (geom);"
 
+if [[ "$type" == "ge" ]]
+    then
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.target_patches ADD COLUMN geom_generalized geometry(MULTIPOLYGON,$crs);"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "UPDATE $schemaname.target_patches SET geom_generalized = ST_Multi(ST_SimplifyPreserveTopology(geom,$generalization_tolerance));"
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_generalized_idx ON $schemaname.target_patches USING gist (geom_generalized);"
+fi
+
 echo -e "Processing the data within the database..."
 ##SET THE GEOMETRIES NAMES
 if [ $type = "bb" ]
@@ -276,6 +297,9 @@ geom='bbox'
 elif [ $type = "bo" ]
 then
 geom='geom_valid'
+elif [ $type = "ge" ]
+then
+geom='geom_generalized'
 fi
 
 #SET THE FORUMLAS
