@@ -165,13 +165,13 @@ then
       echo "The column '$land_use_value' has a wrong datatype, must be DECIMAL or INTEGER" && exit
 fi
 
-check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT '$type_column' FROM '$land_use_layer'' | grep -w 'type (String) = source')"
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT '$type_column' FROM '$land_use_layer'' | grep -w 'String) = source')"
 if [ -z "$check_type_column_value" ]
 then
       echo "In the column called '$type_column' there are no patches classified as 'source'" && exit
 fi
 
-check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT '$type_column' FROM '$land_use_layer'' | grep -w 'type (String) = target')"
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT '$type_column' FROM '$land_use_layer'' | grep -w '(String) = target')"
 if [ -z "$check_type_column_value" ]
 then
       echo "In the column called '$type_column' there are no patches classified as 'target'" && exit
