@@ -37,7 +37,7 @@ while getopts ":d:u:p:s:a:l:v:c:m:f:t:r:" opt; do
     #echo $resolution
       ;;
     \? ) echo "Wrong parameter"
-	 echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
+	 echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution]"  && exit
       ;;
   esac
 done
@@ -46,7 +46,7 @@ done
 if [ ! "$dbname" ] || [ ! "$username" ] || [ ! "$password" ] || [ ! "$datasource" ] || [ ! "$distance" ] || [ ! "$formula" ] || [ ! "$type" ] || [ ! "$resolution" ]
 then
     echo "Missing mandatory parameter"
-    echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]"  && exit
+    echo "Usage: cmd [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution]"  && exit
 fi
 
 #CHECK IF ANALYSIS DISTANCE AND RASTER RESOLUTION ARE INTEGERS
