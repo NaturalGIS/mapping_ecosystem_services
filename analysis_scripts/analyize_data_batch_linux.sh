@@ -242,9 +242,10 @@ sa_extent="$(ogrinfo -so $datasource $study_area_layer| grep -w 'Extent:' | sed 
 echo "Importing study area map..."
 ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area
 echo "Importing land use map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON $datasource land_use
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON -dialect SQLITE -sql "SELECT ST_Intersection(a.geom,ST_Buffer(b.geom,2*$distance)) AS geom,a.* FROM land_use a, study_area b WHERE ST_Intersects(a.geom,ST_Buffer(b.geom,2*$distance))" $datasource
 
-echo -e "Processing the data within the database..."
+
+echo -e "Creating the 'source' and 'target' patches layers..."
 #CREATE THE SOURCE PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.source_patches AS \
@@ -267,6 +268,7 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE IND
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_bbox_idx ON $schemaname.target_patches USING gist (bbox);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_idx ON $schemaname.target_patches USING gist (geom);"
 
+echo -e "Processing the data within the database..."
 ##SET THE GEOMETRIES NAMES
 if [ $type = "bb" ]
 then
