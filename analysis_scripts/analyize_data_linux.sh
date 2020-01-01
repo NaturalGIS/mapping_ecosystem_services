@@ -165,7 +165,7 @@ then
       echo "The column '$land_use_value' has a wrong datatype, must be DECIMAL or INTEGER" && exit
 fi
 
-check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT '$type_column' FROM '$land_use_layer'' | grep -w 'String) = source')"
+check_type_column_value="$(ogrinfo -al $datasource -dialect SQLITE -sql 'SELECT DISTINCT '$type_column' FROM '$land_use_layer'' | grep -w '(String) = source')"
 if [ -z "$check_type_column_value" ]
 then
       echo "In the column called '$type_column' there are no patches classified as 'source'" && exit
@@ -217,15 +217,15 @@ echo ""
 echo "Importing study area map..."
 ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource $study_area_layer
 echo "Importing land use map..."
-ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON $datasource $land_use_layer -spat $sa_extent
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON -dialect SQLITE -sql "SELECT ST_Intersection(a.geom,ST_Buffer(b.geom,2*$distance)) AS geom,a.* FROM $land_use_layer a, $study_area_layer b WHERE ST_Intersects(a.geom,ST_Buffer(b.geom,2*$distance))" $datasource
 
-echo -e "Processing the data within the database..."
+echo -e "Creating the 'source' and 'target' patches layers..."
 ##CREATE THE SOURCE PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.source_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a, $schemaname.study_area b \
-WHERE a.$type_column = 'source' AND ST_Intersects(a.geom,b.geom) IS TRUE;"
+FROM $schemaname.land_use a \
+WHERE a.$type_column = 'source';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.source_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_valid_idx ON $schemaname.source_patches USING gist (geom_valid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_bbox_idx ON $schemaname.source_patches USING gist (bbox);"
@@ -235,13 +235,14 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE IND
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.target_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a, $schemaname.study_area b \
-WHERE a.$type_column = 'target' AND ST_Intersects(a.geom,b.geom) IS TRUE;"
+FROM $schemaname.land_use a \
+WHERE a.$type_column = 'target';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.target_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_valid_idx ON $schemaname.target_patches USING gist (geom_valid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_bbox_idx ON $schemaname.target_patches USING gist (bbox);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_idx ON $schemaname.target_patches USING gist (geom);"
 
+echo -e "Processing the data within the database..."
 ##SET THE GEOMETRIES NAMES
 if [ $type = "bb" ]
 then
