@@ -110,7 +110,6 @@ schemaname=$noext_ds"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
 ##CREATE THE SCHEMA FOR THE RESULTS
 check_schema=$(PGPASSWORD=$password psql -q -U $username -d $dbname -h localhost -c "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$schemaname';")
 if [[ $check_schema == *"1 row"* ]]; then
-  #echo "Database schema name already exists, wait at least 1 minute before running the analysis" && exit
   sleep 1m
   schemaname=$noext_ds"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
   PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE SCHEMA $schemaname;"
@@ -243,21 +242,31 @@ then
 fi
 
 crs="$(ogrinfo -so $datasource land_use | grep -w 'AUTHORITY' | tail -1 | grep -o -E '[0-9]+')"
-sa_extent="$(ogrinfo -so $datasource $study_area_layer| grep -w 'Extent:' | sed 's/) - (/ /g' | sed 's/,//g'| sed 's/(//g'| sed 's/)//g'| sed 's/Extent: //g')"
+sa_extent="$(ogrinfo -so $datasource study_area| grep -w 'Extent:' | sed 's/) - (/ /g' | sed 's/,//g'| sed 's/(//g'| sed 's/)//g'| sed 's/Extent: //g')"
+
+##PICK THE NAME OF THE GEOMETRY COLUMN IN THE INPUT DATASOURCE AS WE CANNOT ASSUME IS "GEOM"
+##lu_geom_name="$(ogrinfo -so $datasource land_use | grep -w 'Geometry Column =' | sed 's/Geometry Column = //g')"
+sa_geom_name="$(ogrinfo -so $datasource land_use | grep -w 'Geometry Column =' | sed 's/Geometry Column = //g')"
 
 #IMPORT THE STUDY AREA AND LAND USE LAYERS
 echo "Importing study area map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area
-echo "Importing land use map..."
-ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON -dialect SQLITE -sql "SELECT ST_Intersection(a.geom,ST_Buffer(b.geom,2*$distance)) AS geom,a.* FROM land_use a, study_area b WHERE ST_Intersects(a.geom,ST_Buffer(b.geom,2*$distance))" $datasource
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area -overwrite
 
+echo "Buffering the study area map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area_buffered -nlt MULTIPOLYGON $datasource -dialect SQLITE -sql "SELECT 1 AS fid, ST_Union(ST_Buffer($sa_geom_name,2*$distance)) AS geom FROM study_area" -overwrite
+
+echo "Importing land use map..."
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use_original -nlt MULTIPOLYGON $datasource land_use -overwrite
+
+echo "clipping the land use map with the buffered study area map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use_clipped -nlt MULTIPOLYGON "PG:host=localhost user=$username dbname=$dbname password=$password" $schemaname.land_use_original -overwrite -clipsrc "PG:host=localhost user=$username dbname=$dbname password=$password" -clipsrclayer $schemaname.study_area_buffered
 
 echo -e "Creating the 'source' and 'target' patches layers..."
 #CREATE THE SOURCE PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.source_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a \
+FROM $schemaname.land_use_clipped a \
 WHERE a.type = 'source';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.source_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_valid_idx ON $schemaname.source_patches USING gist (geom_valid);"
@@ -275,7 +284,7 @@ fi
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.target_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a \
+FROM $schemaname.land_use_clipped a \
 WHERE a.type = 'target';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.target_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_valid_idx ON $schemaname.target_patches USING gist (geom_valid);"
