@@ -50,11 +50,11 @@ None of the patches with classes 3.1/3.2 contributes in value to the patches wit
 
 The **QGIS plugin** needs QGIS >= 3.4 to work, it is written in Python and does not need any particular Python library other than the ones installed by default with any QGIS installation. The plugin is multi-platform and is expected to work on GNU/Linux, macOS and MS Windows.
 
-The **scripts** are meant to be run in a GNU/Linux (Bash) terminal. They were developed/written and tested on Ubuntu 18.04 so any other Linux distribution derived from it will work. If needed they can be easily modified to work on any other GNU/Linux distribution. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS, its [PostGIS](https://postgis.net/) spatial extension and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported: support for remote connections can be easily added if needed, but it probably means some kind of security isse. This scripts take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS.
+The **scripts** are meant to be run in a GNU/Linux (Bash) terminal. They were developed and tested under Ubuntu 18.04 so on any Debian based Linux distribution they are likely to work out of the box, but if needed they can be easily modified to work on any other GNU/Linux distribution. Dependencies for the scripts are the [PostgreSQL](https://www.postgresql.org/) RDBMS, its [PostGIS](https://postgis.net/) spatial extension and the "gdal-bin" package (the latter is also a dependency of any QGIS installation). For security reasons only connections to a **local** PostgreSQL/PostGIS instance are supported. Support for remote connections can be easily added if needed but this would probably mean the need to handle possible security isses.
 
-Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem they are tasked to. 
+Both the QGIS plugins and the scripts use a Spatial SQL approach to solve the problem they are tasked to and take advantage of the internal **geoprocessing** capabilities of a spatially enabled database like PostgreSQL/PostGIS or Geopackages.
 
-The scripts are faster than the QGIS plugin so to analyze large amount of data is sugegsted to use them instead of the QGIS plugin. One of the scripts was created to allow automatically batches of input data sources.
+The scripts are faster than the QGIS plugin so to analyze large amount of data is sugegsted to use them. One of the scripts was created to allow automatically process batches of input data sources.
 
 ## QGIS plugin: data preparation
 
@@ -64,13 +64,13 @@ The scripts are faster than the QGIS plugin so to analyze large amount of data i
 
     b) one representing a land use map
 
-2) This two layers **must** have the same CRS (coordinate reference system) and the CRS **must** be a projected one (geographic CRSs, with degrees as units, are not supported).
+2) The two layers **must** have the same CRS (coordinate reference system) and the CRS **must** be a projected one (geographic CRSs, with degrees as units, are not supported).
 
-3) Input layers features/geometries **must** be free of geometry errors, if in doubt clean them with QGIS's "**fix geometries**" tool **before** using them in this plugin.
+3) Input layers features/geometries **must** be free of geometry errors, if in doubt clean them with QGIS's "**fix geometries**" tool **before** using them as input for the analysis.
 
-4) The land use map/layers **must** have an attribute/column that represent the patches classification. This attribute can be numeric (integer or decimal) or text.
+4) The land use map **must** have an attribute/column that represent the patches classification. This attribute can be numeric (integer or decimal) or text.
 
-5) As part of the computations the  plugin does a **distance analysis**, a type if GIS analysis that is known to be slow when large amount of data is being processed. Depending on the number of patches involved in the analysis the plugin can take quite a long time to compute the results so **please be patient** (in this cases consider using the scripts instead). The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a slighty less precise analysis) use the "**Bounding boxes**" option.
+5) As part of the computations the  plugin does a **distance analysis**: this is a type if GIS analysis that is known to be slow when large amount of data is being processed. Depending on the number of patches being processed the plugin can take quite a long time to compute the results so **please be patient** (eventually consider using the scripts instead). The plugin allows to do the analysis using the patches **bounding boxes** rather than the patches **boundaries**, if you want faster computation times (at the cost of a less precise analysis) use the "**Bounding boxes**" option.
 
 ## QGIS plugin installation and usage
 
@@ -130,21 +130,21 @@ while ***Gaussian*** uses the following:
 
 ### Description
 
-The scripts are found here https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_script and are distributed along with the QGIS plugin but they can be downloaded and used in a completely independet way.
+The scripts are found here https://github.com/NaturalGIS/mapping_ecosystem_services/tree/master/analysis_script and are distributed together with the QGIS plugin but they can be downloaded and used in a completely independet way.
 
 ### For GNU/Linux
 
 **init_postgis_database_linux.sh**: this script is meant to install and configure all the needed dependencies on a Ubuntu 18.04 (or derivate GNU/Linux distribution) machine: 
 
-* PostgreSQL/PostGIS
+* PostgreSQL and PostGIS
 
 * gdal-bin
 
-The script also allows to create a database and a database user that can be used for the analysis of the data. Running this script is not mandatory if the computer being used has already a PostgreSQL/PostGIS installation and a database/database user (with write permissions) are already available to be used.
+The script also allows to create a database and a database user that can be used for the analysis of the data. Running this script is not mandatory if the computer being used has already a PostgreSQL/PostGIS installation and a database (and database user with write permissions) are already available.
 
 **analyize_data_linux.sh**: this the script used to analyze one specific set of input data. The results are outputted as layers/tables inside the database and also as a Geopackage (GPKG) datasource.
 
-**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to process automatically multiple sets of iput data, typically a folder with > 1 Geopckage (GPKG) dataource in it.
+**analyize_data_batch_linux.sh**: it is a version of "analyize_data_linux.sh" made to process automatically multiple sets of input data, typically a folder with > 1 Geopckage (GPKG) dataource in it.
 
 ### Data preparation
 
@@ -152,9 +152,9 @@ The input data must be prepared in a very precise way. This can be easily done w
 
 The input map/layers must exist within a **single** Geopackage (GPKG) datasource (this file can be named in any way):
 
-- a (MULTI)POLYGON map/layer representing the study/analysis area. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**study_area**". The attributes for this layer are not important.
+- a (MULTI)POLYGON map/layer representing the study/analysis area map. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**study_area**". The attributes for this layer are not important.
 
-- a (MULTI)POLYGON map/layer representing the land use. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**land_use**". 
+- a (MULTI)POLYGON map/layer representing the land use map. When using the **analyize_data_batch_linux.sh** script this layer **MUST** be named "**land_use**". 
 
 The land use map/layer **MUST** have a few **mandatory** attributes/columns
 
@@ -162,7 +162,7 @@ The land use map/layer **MUST** have a few **mandatory** attributes/columns
     
 - a column (can be inetger or decimal) that will hold the value associated with the land use classification. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **value**
 
-- a column that must be named **type** (must be text): this column must contain the words "**target**" or "**source**" associated with the parcels that are meant to be used as "target" and "source" in the analysis
+- a column (must be text) that will hold the type of the patches. This column must contain the words "**target**" or "**source**" associated with the patches that are meant to be used as "target" and "source" in the analysis. When using the **analyize_data_batch_linux.sh** script this column **MUST** be named  **type**.
 
 <img src="https://github.com/NaturalGIS/mapping_ecosystem_services/blob/master/img/data_example.png" width="600">
 
@@ -198,7 +198,7 @@ In the above image and example of a table of attributes for a "land use" input m
 
 - Step3: run the analysis, single datasource mode (**analyize_data_linux.sh**). The general usage for this script is:
 
-    ```./analyize_data_linux.sh [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
+    ```./analyize_data_linux.sh [-d database name] [-u database username] [-p database password] [-s path to multilayer datasource] [-a study area layer name] [-l land use layer name] [-v land use value] [-c land use class] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution] [-g generalization tolerance]```
     
     Example:
 
@@ -241,13 +241,15 @@ In the above image and example of a table of attributes for a "land use" input m
 
     **-f ga** > formula to be used, can be "ga" (gaussian) or "li" (linear)
 
-    **-t bo** > type pf the analysis, can be "bo" (boundaries) or "bb" (bounding boxes"
+    **-t bo** > type pf the analysis, can be "bo" (boundaries) or "bb" (bounding boxes) or "ge" (generalized)
 
     **-r 10** > resolution (in meters) of the raster output
+    
+    **-ge 100** > generalization tolerance for the patches polygons. This value is ignored if the value for the "-t" parameter is not set to "ge". For infos about the generalization/simplification process see [ST_SimplifyPreserveTopology](https://postgis.net/docs/ST_SimplifyPreserveTopology.html)
 
 - Step4 (optional): run the analysis, multiple datasource mode (**analyize_data_batch_linux.sh**). The general usage for this script is:
 
-    ```./analyize_data_batch_linux.sh [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t] analysis type [-r raster output spatial resolution]```
+    ```./analyize_data_batch_linux.sh [-d database name] [-u database username] [-p database password] [-s path to folder containing input datasources] [-m analysis distance] [-f analysis formula] [-t analysis type] [-r raster output spatial resolution] [-g generalization tolerance]```
 
     Example:
 
