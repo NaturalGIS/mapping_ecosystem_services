@@ -109,7 +109,6 @@ then
 fi
 
 check_sa_geom="$(ogrinfo -so $datasource $study_area_layer | grep 'Geometry:')"
-#echo $check_sa_geom
 if ([ -z "$check_sa_geom" ]) || ([ "$check_sa_geom" != "Geometry: Polygon" ] && [ "$check_sa_geom" != "Geometry: Multi Polygon" ])
 then
       echo "The '$study_area_layer' layer is not of type POLYGON or MULTIPOLYGON" && exit
@@ -128,7 +127,6 @@ then
 fi
 
 check_lu_geom="$(ogrinfo -so $datasource $land_use_layer | grep 'Geometry:')"
-#echo $check_sa_geom
 if ([ -z "$check_lu_geom" ]) || ([ "$check_sa_geom" != "Geometry: Polygon" ] && [ "$check_sa_geom" != "Geometry: Multi Polygon" ])
 then
       echo "The '$land_use_layer' layer is not of type POLYGON or MULTIPOLYGON" && exit
@@ -204,13 +202,17 @@ schemaname=$noext"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
 ##CREATE THE SCHEMA FOR THE RESULTS
 check_schema=$(PGPASSWORD=$password psql -q -U $username -d $dbname -h localhost -c "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$schemaname';")
 if [[ $check_schema == *"1 row"* ]]; then
-  ##echo "Database schema name already exists, wait at least 1 minute before running the analysis" && exit
   sleep 1m
   schemaname=$noext"_"$formula"_"$type"_"$distance"_"$(date +'%m_%d_%Y_%H_%M')
   PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE SCHEMA $schemaname;"
 else
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE SCHEMA $schemaname;"
 fi
+
+##PICK THE NAME OF THE GEOMETRY COLUMN IN THE INPUT DATASOURCE AS WE CANNOT ASSUME IS "GEOM"
+##lu_geom_name="$(ogrinfo -so $datasource $land_use_layer | grep -w 'Geometry Column =' | sed 's/Geometry Column = //g')"
+sa_geom_name="$(ogrinfo -so $datasource $land_use_layer | grep -w 'Geometry Column =' | sed 's/Geometry Column = //g')"
+
 
 echo ""
 echo -e "Starting Process!"
@@ -219,17 +221,24 @@ echo -e "Analysis name: ${RED}$schemaname${NC}"
 echo ""
 
 #IMPORT THE STUDY AREA AND LAND USE LAYERS
-echo "Importing study area map..."
-ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource $study_area_layer
-echo "Importing land use map..."
-ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use -nlt MULTIPOLYGON -dialect SQLITE -sql "SELECT ST_Intersection(a.geom,ST_Buffer(b.geom,2*$distance)) AS geom,a.* FROM $land_use_layer a, $study_area_layer b WHERE ST_Intersects(a.geom,ST_Buffer(b.geom,2*$distance))" $datasource
+echo "Importing the study area map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource $study_area_layer -overwrite
 
-echo -e "Creating the 'source' and 'target' patches layers..."
+echo "Buffering the study area map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area_buffered -nlt MULTIPOLYGON $datasource -dialect SQLITE -sql "SELECT 1 AS fid, ST_Union(ST_Buffer($sa_geom_name,2*$distance)) AS geom FROM $study_area_layer" -overwrite
+
+echo "Importing land use map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use_original -nlt MULTIPOLYGON $datasource $land_use_layer -overwrite
+
+echo "clipping the land use map with the buffered study area map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use_clipped -nlt MULTIPOLYGON "PG:host=localhost user=$username dbname=$dbname password=$password" $schemaname.land_use_original -overwrite -clipsrc "PG:host=localhost user=$username dbname=$dbname password=$password" -clipsrclayer $schemaname.study_area_buffered
+
 ##CREATE THE SOURCE PATCHES LAYER
+echo -e "Creating the 'source' and 'target' patches layers..."
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.source_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a \
+FROM $schemaname.land_use_clipped a \
 WHERE a.$type_column = 'source';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.source_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_valid_idx ON $schemaname.source_patches USING gist (geom_valid);"
@@ -243,12 +252,11 @@ PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "UPDATE $sc
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX sp_geom_generalized_idx ON $schemaname.source_patches USING gist (geom_generalized);"
 fi
 
-
 ##CREATE THE TARGET PATCHES LAYER
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "\
 CREATE TABLE $schemaname.target_patches AS \
 SELECT a.*, ST_Multi(ST_MakeValid(a.geom))::geometry('MULTIPOLYGON', $crs) AS geom_valid, ST_Multi(ST_Envelope(a.geom))::geometry('MULTIPOLYGON', $crs) AS bbox \
-FROM $schemaname.land_use a \
+FROM $schemaname.land_use_clipped a \
 WHERE a.$type_column = 'target';"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "ALTER TABLE $schemaname.target_patches ADD PRIMARY KEY (gid);"
 PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "CREATE INDEX tp_geom_valid_idx ON $schemaname.target_patches USING gist (geom_valid);"
