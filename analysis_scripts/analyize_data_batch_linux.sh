@@ -242,24 +242,42 @@ then
 fi
 
 crs="$(ogrinfo -so $datasource land_use | grep -w 'AUTHORITY' | tail -1 | grep -o -E '[0-9]+')"
-sa_extent="$(ogrinfo -so $datasource study_area| grep -w 'Extent:' | sed 's/) - (/ /g' | sed 's/,//g'| sed 's/(//g'| sed 's/)//g'| sed 's/Extent: //g')"
+sa_extent="$(ogrinfo -so $datasource study_area| grep -w 'Extent:' | sed 's/) - (/ /g' | sed 's/,//g' | sed 's/(//g' | sed 's/)//g' | sed 's/Extent: //g')"
 
 ##PICK THE NAME OF THE GEOMETRY COLUMN IN THE INPUT DATASOURCE AS WE CANNOT ASSUME IS "GEOM"
 ##lu_geom_name="$(ogrinfo -so $datasource land_use | grep -w 'Geometry Column =' | sed 's/Geometry Column = //g')"
 sa_geom_name="$(ogrinfo -so $datasource land_use | grep -w 'Geometry Column =' | sed 's/Geometry Column = //g')"
 
+#CHECK GDAL VERSION, AS SOME PARAMETERS MAY HAVE CHANGED NAME IN VERY RECENT RELEASES
+gdalversion="$(ogrinfo --version | cut -f1 -d"," | sed 's/[^0-9]*//g')"
+if (( $gdalversion > 240 ))
+then
+spatialindex='GIST'
+else
+spatialindex='YES'
+fi
+
 #IMPORT THE STUDY AREA AND LAND USE LAYERS
 echo "Importing study area map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area -nlt MULTIPOLYGON $datasource study_area -overwrite
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=$spatialindex -lco GEOMETRY_NAME=geom -lco FID=gid -nln $schemaname.study_area -nlt MULTIPOLYGON $datasource study_area -overwrite -lco OVERWRITE=YES -t_srs EPSG:$crs
 
 echo "Buffering the study area map..."
-ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln study_area_buffered -nlt MULTIPOLYGON $datasource -dialect SQLITE -sql "SELECT 1 AS fid, ST_Union(ST_Buffer($sa_geom_name,2*$distance)) AS geom FROM study_area" -overwrite
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=$spatialindex -lco GEOMETRY_NAME=geom -lco FID=gid -nln $schemaname.study_area_buffered -nlt MULTIPOLYGON $datasource -dialect SQLITE -sql "SELECT 1 AS fid, ST_Union(ST_Buffer($sa_geom_name,2*$distance)) AS geom FROM study_area" -overwrite -lco OVERWRITE=YES -t_srs EPSG:$crs
+
+#CHECK THE EXTENT OF THE BUFFERED STUDY AREA LAYER
+sa_buffered_extent="$(ogrinfo -so "PG:host=localhost user=$username dbname=$dbname password=$password" $schemaname.study_area_buffered | grep -w 'Extent:' | sed 's/) - (/ /g' | sed 's/,//g'| sed 's/(//g'| sed 's/)//g'| sed 's/Extent: //g')"
 
 echo "Importing land use map..."
-ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use_original -nlt MULTIPOLYGON $datasource land_use -overwrite
+ogr2ogr -q -progress --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=$spatialindex -lco GEOMETRY_NAME=geom -lco FID=gid -nln $schemaname.land_use_original -nlt MULTIPOLYGON $datasource land_use -overwrite -lco OVERWRITE=YES -t_srs EPSG:$crs
 
-echo "clipping the land use map with the buffered study area map..."
-ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=YES -lco SCHEMA=$schemaname -lco GEOMETRY_NAME=geom -lco FID=gid -nln land_use_clipped -nlt MULTIPOLYGON "PG:host=localhost user=$username dbname=$dbname password=$password" $schemaname.land_use_original -overwrite -clipsrc "PG:host=localhost user=$username dbname=$dbname password=$password" -clipsrclayer $schemaname.study_area_buffered
+echo "Cleaning the land use map geometries..."
+PGPASSWORD=$password psql -q -h localhost -d $dbname -U $username -c "UPDATE $schemaname.land_use_original SET geom=ST_MakeValid(geom) WHERE ST_IsValid(geom) IS FALSE;" &>/dev/null
+
+echo "Clipping the land use map with the buffered study area map extent..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=$spatialindex -lco GEOMETRY_NAME=geom -lco FID=gid -nln $schemaname.land_use_extent -nlt MULTIPOLYGON "PG:host=localhost user=$username dbname=$dbname password=$password" $schemaname.land_use_original -overwrite -lco OVERWRITE=YES -t_srs EPSG:$crs -spat $sa_buffered_extent -clipsrc spat_extent
+
+echo "Clipping the land use map with the buffered study area map..."
+ogr2ogr -q --config PG_USE_COPY YES -f "PostgreSQL" "PG:host=localhost user=$username dbname=$dbname password=$password" -lco SPATIAL_INDEX=$spatialindex -lco GEOMETRY_NAME=geom -lco FID=gid -nln $schemaname.land_use_clipped -nlt MULTIPOLYGON "PG:host=localhost user=$username dbname=$dbname password=$password" $schemaname.land_use_extent -clipsrc "PG:host=localhost user=$username dbname=$dbname password=$password" -clipsrclayer $schemaname.study_area_buffered -overwrite -lco OVERWRITE=YES -t_srs EPSG:$crs
 
 echo -e "Creating the 'source' and 'target' patches layers..."
 #CREATE THE SOURCE PATCHES LAYER
